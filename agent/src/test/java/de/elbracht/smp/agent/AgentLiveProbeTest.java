@@ -11,7 +11,7 @@ class AgentLiveProbeTest {
     @Test void inspectTheIsolatedDockerTarget() throws Exception {
         var probe = new DockerContainerProbe(StatusServiceTest.properties(25585, "docker-read-only"), new ObjectMapper());
         var result = probe.inspect();
-        assertThat(result.testTarget()).isTrue(); assertThat(result.portMatches()).isTrue(); assertThat(result.running()).isTrue();
+        assertThat(result.targetMatches()).isTrue(); assertThat(result.portMatches()).isTrue(); assertThat(result.running()).isTrue();
     }
     @Test void queryTheIsolatedMinecraftServer() throws Exception {
         try (var probe = new MinecraftStatusProbe(StatusServiceTest.properties(25585, "docker-read-only"), new ObjectMapper())) {

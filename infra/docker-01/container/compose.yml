@@ -1,0 +1,69 @@
+name: elbracht-smp-read-only
+services:
+  docker-reader:
+    build:
+      context: .
+      dockerfile: proxy.Dockerfile
+    image: elbracht-smp-docker-reader:0.1.0
+    user: "10001:10001"
+    # Only the proxy receives the host's socket group, never the application.
+    group_add:
+      - "${DOCKER_SOCKET_GID:?Set the Docker socket group ID}"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 32
+    mem_limit: 64m
+    cpus: 0.25
+    restart: "no"
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=8m,uid=10001,gid=10001
+    volumes:
+      - type: bind
+        source: ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}
+        target: /var/run/docker.sock
+        read_only: true
+        bind:
+          create_host_path: false
+      - reader-socket:/run/docker-read-only
+  agent:
+    build:
+      context: ../../..
+      dockerfile: agent/Dockerfile
+    image: elbracht-smp-agent:0.1.0
+    user: "10001:10001"
+    # Linux host namespace is required for the fixed 127.0.0.1 Minecraft probe.
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 96
+    mem_limit: 384m
+    cpus: 0.5
+    restart: "no"
+    depends_on: [docker-reader]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker-01
+      AGENT_DOCKER_CONTEXT: read-only
+      AGENT_TOKEN_FILE: /run/secrets/agent-token
+      AGENT_EXPECTED_IMAGE_ID: ${AGENT_EXPECTED_IMAGE_ID:?Set the reviewed image configuration ID}
+      SERVER_ADDRESS: 127.0.0.1
+      SERVER_PORT: ${AGENT_HTTP_PORT:-8091}
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m,uid=10001,gid=10001
+    volumes:
+      - agent-data:/app/data
+      - type: volume
+        source: reader-socket
+        target: /run/docker-read-only
+        read_only: true
+      - type: bind
+        source: ${AGENT_TOKEN_PATH:?Set an absolute path to the external token file}
+        target: /run/secrets/agent-token
+        read_only: true
+        bind:
+          create_host_path: false
+volumes:
+  reader-socket:
+  agent-data:

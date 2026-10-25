@@ -27,7 +27,7 @@ public class OperationService {
             if (type == OperationStore.Type.STOP || type == OperationStore.Type.RESTART) {
                 control.stop();
                 var stopped = docker.inspect();
-                if (!stopped.testTarget() || stopped.running() || !stopped.status().equals("exited")) throw new IllegalStateException();
+                if (!stopped.targetMatches() || stopped.running() || !stopped.status().equals("exited")) throw new IllegalStateException();
             }
             if (type != OperationStore.Type.STOP) {
                 control.start();
@@ -36,7 +36,7 @@ public class OperationService {
                 while (System.nanoTime() < deadline) {
                     try {
                         var current = docker.inspect();
-                        if (current.testTarget() && current.running() && !current.paused() && !current.restarting() && !current.dead() && current.portMatches()) {
+                        if (current.targetMatches() && current.running() && !current.paused() && !current.restarting() && !current.dead() && current.portMatches()) {
                             minecraft.query(); ready = true; break;
                         }
                     } catch (java.io.IOException ignored) { }

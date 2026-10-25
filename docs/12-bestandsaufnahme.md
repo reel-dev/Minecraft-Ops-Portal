@@ -1,6 +1,12 @@
 # M01: Bestandsaufnahme und Nachweise
 
-Noch **nicht erhoben**. Diese Vorlage ist keine Bestätigung des Ist-Zustands. Minecraft `26.3` und Fabric bleiben Nutzerangaben, bis unabhängige Nachweise vorliegen.
+Produktiver Laufzeitstand **teilweise anhand übermittelter Terminalausgaben erfasst**. Die [Startmeldungen des produktiven Containers](../references/docker-01-versions.supplied.txt) belegen Minecraft `26.3` mit Fabric Loader `0.19.5` für die gezeigten Starts. Logdatum/Zeitzone und aktuelle Minecraft-Readiness sind daraus nicht ersichtlich. Keine direkte Hostverbindung durch das Portal und keine technische Gesamtabnahme.
+
+Der Nutzer hat am 25.10.2026 eine [Docker-Inspect-Ausgabe von docker-01](../references/docker-01-inspect.supplied.txt) übermittelt: Container `/minecraft-server`, Zustand `running`, Image-Konfigurations-ID `sha256:5a2ab74ae179c11e2dbbce67f307cdcf2c1257b3abb0f654d3a310b3d8ea57da`. Exakte UTC-Erfassungszeit fehlt. Diese Ausgabe bestätigt weder Minecraft-Readiness noch Laufzeitversionen; die Image-Konfigurations-ID ist kein Repository-Manifest-Digest. Keine direkte Hostverbindung durch das Portal.
+
+Dokumentierte Nutzerangaben: Homelab → Proxmox-Instanz `docker-01` → Docker, Container `minecraft-server`. Die [gelieferte Compose](../references/server-compose.supplied.yml) deklariert Fabric Loader `0.19.5`, Image `stable`, `./data:/data` und 8G JVM-Speicher. Die nachgereichten [Proxmox-Screenshots](../references/docker-01-backup-screen.supplied.md) zeigen docker-01 als VM 100 auf Knoten pve; drei Snapshots vom 27./28.06.2026 und eine leere Backupansicht. Eine aktuelle geprüfte Sicherung ist nicht nachgewiesen. Die separate [lokale Testserver-Abnahme](13-testserver-abnahme.md) überträgt keine Nachweise auf Produktion.
+
+Für den nächsten Abgleich liegt eine [lesende Bestandsprüfung](../infra/docker-01/README.md) bereit. Sie wurde nicht auf docker-01 ausgeführt und benötigt keine Änderung der bestehenden Compose-Datei.
 
 ## Erfassung im Portal
 
@@ -18,19 +24,19 @@ Keine Passwörter, API-Keys, vollständigen Secretdateien oder unredigierten Com
 
 | Gegenstand | Nachgewiesener Wert | Quelle | Erfasst am (UTC) | Geprüft durch |
 |---|---|---|---|---|
-| Proxmox VM/LXC und Docker-Host-Zuordnung | offen | offen | offen | offen |
-| Zielcontainer und eindeutige Serverzuordnung | offen | offen | offen | offen |
-| itzg-Image mit Digest | offen | offen | offen | offen |
-| Tatsächliche Minecraft-Version | offen | offen | offen | offen |
-| Tatsächlicher Loader und Loader-Version | offen | offen | offen | offen |
+| Proxmox VM/LXC und Docker-Host-Zuordnung | VM 100 (docker-01), Knoten pve laut Proxmox-Ansicht; Dockercontainer laut Terminalausgaben | references/docker-01-backup-screen.supplied.md und Inspect-Ausgabe | Aufnahmezeit unbekannt; übermittelt 25.10.2026 | Nutzer liefert Screenshots; hier ausgewertet |
+| Zielcontainer und eindeutige Serverzuordnung | `/minecraft-server`, Docker-Zustand `running` auf docker-01 laut übermittelter Ausgabe; weitere Zuordnung offen | references/docker-01-inspect.supplied.txt | nicht mitgeliefert; übermittelt 25.10.2026 | Nutzer führt Befehl aus; Ausgabe hier ausgewertet |
+| itzg-Image mit Digest | Image-Konfigurations-ID erfasst, siehe oben; Repository-Manifest-Digest offen | references/docker-01-inspect.supplied.txt | nicht mitgeliefert; übermittelt 25.10.2026 | Ausgabe ausgewertet; kein Registry-Abgleich |
+| Tatsächliche Minecraft-Version | `26.3` laut Startmeldungen des Containers | references/docker-01-versions.supplied.txt | Logdatum/Zeitzone fehlen; übermittelt 25.10.2026 | Nutzer liest Logs; Ausgabe hier ausgewertet |
+| Tatsächlicher Loader und Loader-Version | Fabric Loader `0.19.5` laut Startmeldungen | references/docker-01-versions.supplied.txt | Logdatum/Zeitzone fehlen; übermittelt 25.10.2026 | Nutzer liest Logs; Ausgabe hier ausgewertet |
 | Java-Runtime des Minecraft-Containers | offen | offen | offen | offen |
-| Datenvolume und Mountart, ohne Geheimnisse | offen | offen | offen | offen |
+| Datenvolume und Mountart, ohne Geheimnisse | Schreibbarer Bind-Mount auf `/data`; dessen Quelle liegt auf `/dev/sda2`, Root-Dateisystem der VM. Absoluter Quellpfad bewusst nicht erfasst | references/docker-01-mounts.supplied.txt und references/docker-01-data-filesystem.supplied.txt | nicht mitgeliefert; übermittelt 25.10.2026 | Nutzer führt Inspect/df aus; Ausgabe hier ausgewertet |
 | Bestehende Quelle für server.properties / Umgebungswerte | offen | offen | offen | offen |
 | RCON-Aktivierung, interne Erreichbarkeit, Secretablage | offen | offen | offen | offen |
 | Existierende Readiness-Prüfung | offen | offen | offen | offen |
 | Installierter Modbestand mit Dateihashes | offen | offen | offen | offen |
 | Xaero-Projekte und Server-/Clientverteilung | offen | offen | offen | offen |
-| Letzte erfolgreiche Sicherung und Integritätsnachweis | offen | offen | offen | offen |
+| Letzte erfolgreiche Sicherung und Integritätsnachweis | Proxmox-Backup VM 100 mit TASK OK, 11,43 GB Archiv, 127 s; zuvor Ziel local gewählt. Datenumfang/Weltkonsistenz, externe Kopie und Restore noch ungeprüft | references/docker-01-backup-success.supplied.md | Abschlussanzeige 2026-10-25 11:22:09 ohne bestätigte Zeitzone | Nutzer führt Backup aus; Abschluss-Screenshot hier ausgewertet |
 | Isolierter Testserver und separate Testdaten | offen | offen | offen | offen |
 | Portalzugriff LAN/VPN/Internet und OIDC-Provider | offen | offen | offen | offen |
 

@@ -1,0 +1,10 @@
+Quelle: vom Nutzer eingefügte Terminalausgabe auf docker-01, im Gespräch am 25.10.2026.
+Exakter Erfassungszeitpunkt/UTC-Zeit nicht mitgeliefert. Kein direkter Agentzugriff.
+
+rene@docker-01:~$ docker inspect --format '{{.Name}} | {{.State.Status}} | {{.Image}}' minecraft-server
+/minecraft-server | running | sha256:5a2ab74ae179c11e2dbbce67f307cdcf2c1257b3abb0f654d3a310b3d8ea57da
+rene@docker-01:~$
+
+Einordnung: Docker-Prozesszustand running; keine Minecraft-Readiness-Prüfung.
+.Image ist die Image-Konfigurations-ID, kein Nachweis eines Repository-Manifest-Digests.
+Keine Laufzeitversionen, Weltmounts oder Sicherungen durch diese Ausgabe belegt.

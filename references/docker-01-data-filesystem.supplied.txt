@@ -1,0 +1,13 @@
+Quelle: vom Nutzer übermittelte Terminalausgabe von docker-01, Gespräch am 25.10.2026.
+Exakter UTC-Erfassungszeitpunkt nicht mitgeliefert; kein direkter Hostzugriff.
+
+rene@docker-01:~$ df -h "$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/data"}}{{.Source}}{{end}}{{end}}' minecraft-server)"
+Dateisystem    Größe Benutzt Verf. Verw% Eingehängt auf
+/dev/sda2       235G     21G  202G   10% /
+rene@docker-01:~$
+
+Einordnung: Die Bind-Mountquelle von /data liegt im Root-Dateisystem /dev/sda2
+der VM, nicht auf einem hier erkennbaren separaten Dateisystem. Der absolute
+Quellpfad wurde nicht ausgegeben. Zusammen mit Hardwareansicht und Backuplauf
+ist damit die Zuordnung zur VM-Systemdisk dokumentiert. Dies belegt keinen
+anwendungskonsistenten Weltzustand und ersetzt keinen isolierten Restoretest.

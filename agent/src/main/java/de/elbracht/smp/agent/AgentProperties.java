@@ -6,9 +6,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("agent")
 public record AgentProperties(String mode, String serverId, Path tokenFile, String container, String dockerContext,
-                              int minecraftPort, Duration dockerTimeout, Duration minecraftTimeout) {
+                              int minecraftPort, Duration dockerTimeout, Duration minecraftTimeout, String expectedImageId) {
     public AgentProperties {
-        if (!"disconnected".equals(mode) && !"docker-read-only".equals(mode) && !"docker-test-control".equals(mode)) throw new IllegalStateException("Unbekannter Agentmodus");
+        if (!"disconnected".equals(mode) && !"docker-read-only".equals(mode) && !"docker-host-read-only".equals(mode) && !"docker-test-control".equals(mode)) throw new IllegalStateException("Unbekannter Agentmodus");
+        if ("docker-host-read-only".equals(mode) && (expectedImageId == null || !expectedImageId.matches("sha256:[0-9a-f]{64}")))
+            throw new IllegalStateException("Lesender Hostmodus benötigt eine festgelegte Image-Konfigurations-ID");
         if ("docker-test-control".equals(mode) && !"elbracht-smp-control-test-minecraft".equals(container))
             throw new IllegalStateException("Teststeuerung ist ausschließlich für den fest benannten Testcontainer zulässig");
         if (serverId == null || !serverId.matches("[A-Za-z0-9_-]{1,64}") || container == null || !container.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,127}")

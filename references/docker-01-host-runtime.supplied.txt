@@ -1,0 +1,14 @@
+Quelle: Nutzer-Terminalausgabe von docker-01, Gespräch am 25.10.2026.
+Exakte UTC-Erfassungszeit nicht mitgeliefert; kein direkter Hostzugriff.
+
+rene@docker-01:~$ java -version
+docker port minecraft-server 25565/tcp
+-bash: java: Kommando nicht gefunden.
+0.0.0.0:25565
+[::]:25565
+rene@docker-01:~$
+
+Einordnung: Java ist im verwendeten Host-PATH nicht verfügbar. Dies sagt nichts
+über die Java-Runtime im Minecraft-Container aus. Docker veröffentlicht TCP 25565
+über IPv4-Wildcard und IPv6-Wildcard; die lokale IPv4-Probe ist damit zugeordnet.
+Keine Installations-, Compose- oder Firewalländerung ausgeführt.

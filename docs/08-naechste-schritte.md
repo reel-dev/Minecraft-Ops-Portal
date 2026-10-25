@@ -1,5 +1,21 @@
 # Nächste Schritte
 
+## Vorrangiger Abgleich der Projektchats
+
+Die zweite Anwendung aus „Weiter Minecraft Verwaltung“ wurde laut Nutzer noch nicht auf docker-01 gestartet. Ihr tatsächlicher Quellstand ist inzwischen separat abgerufen und lokal mit 20 erfolgreichen Tests gebaut. [Vergleich und Übernahmeplan](15-abgleich-projektchats.md): Dieses Angular-/Spring-Boot-Repository bleibt Produktbasis; RCON und Spielerabläufe werden gezielt integriert, bestehende Rollen, persistente Jobs, UNKNOWN-Sperre und Audit bleiben erhalten. Vor einem Produktionsdeployment zuerst den gemeinsamen Stand und seine Container prüfen. Weder die alte ZIP noch das vorbereitete Agentpaket jetzt parallel installieren.
+
+## Aktuelle Priorität: docker-01 lesend erfassen
+
+Das Grundgerüst und der vertikale Testpfad sind bereits implementiert. Status sowie Stop/Start/Restart wurden an einer separaten lokalen Testwelt erfolgreich geprüft; [Abnahme](13-testserver-abnahme.md). Der produktive Anschluss bleibt unverändert.
+
+Container, Startversionen, VM 100, Datenquelle auf dem VM-Root-Dateisystem und ein erfolgreicher Proxmox-Backuplauf sind inzwischen anhand übermittelter Ausgaben/Screenshots dokumentiert. Restore und konsistente Weltsicherung bleiben offen. Ein eigener [Host-Lesemodus](../infra/docker-01/agent-read-only.md) ist lokal implementiert und geprüft. Als Nächstes Host-Java und Portbindung prüfen, danach den lesenden Dienst mit eigenem Token und sicherem Transport kontrolliert einrichten. Keine Testlabels auf Produktion setzen und keine produktive Steuerung aktivieren.
+
+Nachtrag: Host-Java ist nicht im PATH verfügbar, Port 25565 ist über IPv4-/IPv6-Wildcard veröffentlicht. Eine [eigene Containerbereitstellung](../infra/docker-01/container/README.md) mit Java und gefiltertem Dockerzugriff ist vorbereitet und als Paket erzeugt; Compose-Syntax geprüft. Die lokale Docker-Desktop-Instanz scheiterte beim Start mit einer gesperrten `sailor-ingest.sock`-Datei. Kein automatischer Neustart-/Resetversuch; Containerbuild und Laufzeittest bleiben offen. Kein Deployment auf docker-01.
+
+Konten und Hosting werden [getrennt behandelt](14-konten-und-hosting.md): Mitverwalter brauchen nur Zugriff auf einen registrierten Server. Selfservice-Registrierung weiterer Hostinganschlüsse ist ein späterer Schritt.
+
+Die folgenden Punkte sind der ursprüngliche Gesamtplan; bereits implementierte Teile werden im [aktuellen Stand](10-implementierungsstand.md) ausgewiesen.
+
 ## 1. Projektübernahme abschließen
 
 Das neue ChatGPT/Work-Projekt muss noch in einer funktionierenden Oberfläche angelegt werden. Name: Elbracht SMP Control. Dieses Paket und das verfügbare Referenzbild übernehmen, Projektanweisungen setzen. Zweiten Screenshot aus dem Ursprungs-Chat exportieren oder erneut anhängen. Frühere Chatteile nur ergänzen, wenn sie tatsächlich verfügbar werden; der vorhandene Export wird nicht als Vollarchiv ausgegeben.

@@ -1,0 +1,14 @@
+Quelle: vom Nutzer eingefügte Terminalausgabe von docker-01, Gespräch am 25.10.2026.
+Logauszug enthält Uhrzeiten ohne Datum oder Zeitzone; exakter UTC-Zeitpunkt unbekannt.
+Kein direkter Zugriff des Portals auf den produktiven Host.
+
+rene@docker-01:~$ docker logs --tail 5000 minecraft-server 2>&1 | grep -E 'Loading Minecraft .* with Fabric Loader|Starting minecraft server version' | tail -n 5
+[22:26:22] [main/INFO]: Loading Minecraft 26.3 with Fabric Loader 0.19.5
+[22:26:32] [Server thread/INFO]: Starting minecraft server version 26.3
+[23:08:00] [main/INFO]: Loading Minecraft 26.3 with Fabric Loader 0.19.5
+[23:08:10] [Server thread/INFO]: Starting minecraft server version 26.3
+rene@docker-01:~$
+
+Einordnung: Startmeldungen des benannten Containers belegen Minecraft 26.3 mit
+Fabric Loader 0.19.5 für die gezeigten Starts. Keine Aussage über deren Anlass,
+aktuelle Readiness, Java-Version, Modbestand, Weltmounts oder Backupqualität.

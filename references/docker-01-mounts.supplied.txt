@@ -1,0 +1,9 @@
+Quelle: vom Nutzer eingefügte Terminalausgabe von docker-01, Gespräch am 25.10.2026.
+Exakter UTC-Erfassungszeitpunkt nicht mitgeliefert. Kein direkter Hostzugriff.
+
+rene@docker-01:~$ docker inspect --format '{{range .Mounts}}{{.Type}} → {{.Destination}} | schreibbar={{.RW}}{{println}}{{end}}' minecraft-server
+bind → /data | schreibbar=true
+
+Einordnung: Ausgabe zeigt einen schreibbaren Bind-Mount auf /data.
+Host-Quellpfad wurde bewusst nicht abgefragt und ist nicht nachgewiesen.
+Keine Aussage über Inhalt, Datenträger, Sicherung oder Wiederherstellbarkeit.

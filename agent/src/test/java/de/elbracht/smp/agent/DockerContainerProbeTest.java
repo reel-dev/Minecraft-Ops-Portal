@@ -18,23 +18,23 @@ class DockerContainerProbeTest {
             {"status":"running","running":true,"paused":false,"restarting":false,"dead":false,
              "environment":"test","serverId":"main","ports":{"25565/tcp":[{"HostIp":"127.0.0.1","HostPort":"25585"}]}}
             """;
-        assertThat(probe.parse(mapper.readTree(json)).testTarget()).isTrue();
+        assertThat(probe.parse(mapper.readTree(json)).targetMatches()).isTrue();
         assertThat(probe.parse(mapper.readTree(json)).portMatches()).isTrue();
         assertThat(probe.parse(mapper.readTree(json.replace("127.0.0.1", "0.0.0.0"))).portMatches()).isFalse();
-        assertThat(probe.parse(mapper.readTree(json.replace("\"test\"", "\"production\""))).testTarget()).isFalse();
-        assertThat(probe.parse(mapper.readTree(json.replace("\"main\"", "\"other\""))).testTarget()).isFalse();
+        assertThat(probe.parse(mapper.readTree(json.replace("\"test\"", "\"production\""))).targetMatches()).isFalse();
+        assertThat(probe.parse(mapper.readTree(json.replace("\"main\"", "\"other\""))).targetMatches()).isFalse();
         assertThatThrownBy(() -> probe.parse(mapper.readTree(json.replace("\"running\":true", "\"running\":\"true\"")))).isInstanceOf(java.io.IOException.class);
     }
     @Test void unsafeConfigurationIsRejected() {
         assertThatThrownBy(() -> new AgentProperties("docker-read-only", "main", java.nio.file.Path.of("unused"),
-            "server;rm", "default", 25585, java.time.Duration.ofSeconds(1), java.time.Duration.ofSeconds(1)))
+            "server;rm", "default", 25585, java.time.Duration.ofSeconds(1), java.time.Duration.ofSeconds(1), null))
             .isInstanceOf(IllegalStateException.class);
     }
     @Test void parsesOnlyTheEightSelectedDockerValues() throws Exception {
         var probe = new DockerContainerProbe(StatusServiceTest.properties(25585, "docker-read-only"), mapper);
         byte[] output = "\"running\"\ntrue\nfalse\nfalse\nfalse\n{\"25565/tcp\":[{\"HostIp\":\"127.0.0.1\",\"HostPort\":\"25585\"}]}\n\"test\"\n\"main\"\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         assertThat(probe.parseOutput(output).portMatches()).isTrue();
-        assertThat(probe.parseOutput(output).testTarget()).isTrue();
+        assertThat(probe.parseOutput(output).targetMatches()).isTrue();
         assertThatThrownBy(() -> probe.parseOutput("{}".getBytes())).isInstanceOf(java.io.IOException.class);
     }
 }

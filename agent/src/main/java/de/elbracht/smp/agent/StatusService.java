@@ -19,7 +19,7 @@ public class StatusService {
         if ("disconnected".equals(properties.mode()) || !singleProbe.tryAcquire()) return state("UNKNOWN", "UNKNOWN");
         try {
             var container = docker.inspect();
-            if (!container.testTarget()) return state("UNKNOWN", "FAILED");
+            if (!container.targetMatches()) return state("UNKNOWN", "FAILED");
             if (container.dead()) return state("ERROR", "FAILED");
             if (container.paused()) return state("UNKNOWN", "DEGRADED");
             if (container.restarting()) return state("STARTING", "DEGRADED");

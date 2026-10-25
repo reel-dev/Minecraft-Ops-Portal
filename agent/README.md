@@ -8,6 +8,7 @@ Spring Boot 3.5.16, Java-Ziel 21, lokal mit JDK 25 geprüft. Der Dienst läuft s
 |---|---|
 | `disconnected` (Standard) | Keine Docker-/Minecraft-Abfrage, UNKNOWN |
 | `docker-read-only` | Begrenzte Docker-Inspektion und Minecraft-Server-List-Status |
+| `docker-host-read-only` | Lesender Anschluss ohne Testlabels; fest konfigurierter Container, exakte Image-Konfigurations-ID und lokales Portbinding erforderlich |
 | `docker-test-control` | Zusätzlich START/STOP/RESTART ausschließlich für die unten festgelegte Test-Compose |
 
 Für alle Modi ist eine externe Token-Datei erforderlich: `AGENT_TOKEN_FILE`. Sie enthält ein zufälliges Token mit 32–4096 Zeichen aus Buchstaben, Ziffern und `._~-`; ein abschließender Zeilenumbruch ist erlaubt. Token nie in Git, URLs oder Angular übernehmen. Der Dienst akzeptiert nur `Authorization: Bearer ...`, verwendet keine Browser-Session und vergleicht Token-Hashes zeitkonstant. Fehlendes/falsches Token ergibt 401. TLS/Keystore für eine spätere Hostgrenze separat bereitstellen; die aktuelle Prüfung bleibt vollständig auf Loopback.
@@ -16,7 +17,19 @@ Für alle Modi ist eine externe Token-Datei erforderlich: `AGENT_TOKEN_FILE`. Si
 
 `AGENT_CONTAINER` (Standard `elbracht-smp-control-test-minecraft`), `AGENT_DOCKER_CONTEXT` (Standard `default`), `agent.server-id` (Standard `main`) und `agent.minecraft-port` (Standard `25585`) kommen ausschließlich aus der Backendkonfiguration.
 
-Inspektion liest gezielt Zustand, veröffentlichte Ports und zwei Kennzeichnungslabels. Keine Containerumgebung oder Healthcheck-Rohlogs. Docker läuft über eine feste `ProcessBuilder`-Argumentliste ohne Shell. Ausgabe und Wartezeit sind begrenzt. Unter Windows verwendet das Go-Template einzelne JSON-Werte und Raw-String-Schlüssel; ein Live-Test deckt die Windows-Argumentübergabe ab.
+Inspektion liest gezielt Zustand, veröffentlichte Ports und zwei Kennzeichnungslabels; im Host-Lesemodus zusätzlich `.Image`. Keine Containerumgebung oder Healthcheck-Rohlogs. Docker läuft über eine feste `ProcessBuilder`-Argumentliste ohne Shell. Ausgabe und Wartezeit sind begrenzt. Unter Windows verwendet das Go-Template einzelne JSON-Werte und Raw-String-Schlüssel; der bisherige Live-Test deckt die Windows-Argumentübergabe des Testmodus ab. Der neue Hostmodus ist noch nicht live auf docker-01 geprüft.
+
+## Lesender Hostanschluss
+
+Der ausdrücklich aktivierte Modus `docker-host-read-only` verlangt `agent.expected-image-id` im Format `sha256:` plus 64 kleine Hexzeichen. Verglichen wird die tatsächliche Image-Konfigurations-ID aus dem benannten Container, kein Tag oder Repository-Manifest-Digest. Bei anderer oder fehlender ID wird UNKNOWN/FAILED gemeldet und kein Minecraft-Ping ausgeführt. Nach einem bewussten Imagewechsel muss die Zuordnung separat geprüft und angepasst werden. Der Anschluss erfordert keine Änderung der Minecraft-Compose und keine Testlabels.
+
+Für die Statusprobe wird weiterhin nur `127.0.0.1` angesprochen. Das Dockerbinding muss den konfigurierten IPv4-Port entweder an `127.0.0.1` oder `0.0.0.0` veröffentlichen; reine IPv6- oder andere spezifische Hostbindungen werden abgewiesen. Ein akzeptiertes Wildcardbinding ist kein Vorschlag für eine neue Portfreigabe. Der Agent liest die bestehende Zuordnung. RUNNING erfordert weiterhin eine echte Minecraft-Antwort; Loaderwerte bleiben null.
+
+Im Hostmodus verweigert die HTTP-Sicherheit alle Operationsrequests mit 403, auch mit gültigem Token. Die Operationsimplementierung selbst ist zusätzlich auf `docker-test-control` begrenzt. Default und Testschutz bleiben unverändert. Der Dienst bindet nur Loopback; keine Freigabe von 8091 im LAN/Internet. Dockerberechtigungen des Dienstkontos bleiben ein weitreichendes Hostprivileg, obwohl diese API nur liest.
+
+Das Profil `docker-01` liefert die feste Container-/Portzuordnung; die Image-ID und Token-Datei müssen extern gesetzt werden. [Vorbereitung und Grenzen](../infra/docker-01/agent-read-only.md). Noch keine Installation oder Abnahme auf dem produktiven Host.
+
+Auf docker-01 fehlt Java im Host-PATH. Dafür ist eine [separate Containerbereitstellung mit gefiltertem Docker-Proxy](../infra/docker-01/container/README.md) vorbereitet. Compose-Syntax ist lokal geprüft; Imagebuild und Container-Laufzeittest sind noch offen, weil Docker Desktop auf dem Entwicklungs-PC beim Start scheiterte. Keine Produktionsinstallation. Das Paket wird nach dem Agentbuild über `infra/docker-01/New-AgentBundle.ps1` erstellt; es enthält ausschließlich ausgewählte Quellen und den JAR, keine `.env`- oder Token-Dateien.
 
 Readiness stammt aus einer echten Java-Edition-Server-List-Abfrage an den geprüften lokalen Port. Kein Login, RCON oder Spielkommando. Paketlänge, VarInts, Antwortfelder und Gesamtzeit sind begrenzt. Nur eine erfolgreiche Minecraft-Antwort ergibt RUNNING. Docker „running“ allein ergibt bei fehlender Minecraft-Antwort UNKNOWN/DEGRADED. Spielversion und Spielerzahl werden gemessen; Loader-/Loader-Version bleiben im Status null, weil dieser Datenstrom sie nicht nachweist.
 

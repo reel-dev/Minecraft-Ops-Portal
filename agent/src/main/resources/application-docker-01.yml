@@ -1,0 +1,8 @@
+# Opt-in only. Requires a reviewed image configuration ID and an external token file.
+# No change to the Minecraft container, labels, world mount or port publication.
+agent:
+  mode: docker-host-read-only
+  container: minecraft-server
+  docker-context: default
+  minecraft-port: 25565
+  expected-image-id: ${AGENT_EXPECTED_IMAGE_ID:}

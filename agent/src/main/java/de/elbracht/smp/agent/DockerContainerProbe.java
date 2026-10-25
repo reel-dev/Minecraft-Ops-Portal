@@ -25,7 +25,9 @@ public class DockerContainerProbe implements ContainerProbe {
     private final ObjectMapper mapper;
     public DockerContainerProbe(AgentProperties properties, ObjectMapper mapper) { this.properties = properties; this.mapper = mapper; }
     List<String> command() {
-        return List.of("docker", "--context", properties.dockerContext(), "container", "inspect", "--format", FORMAT, "--", properties.container());
+        String format = FORMAT;
+        if (hostReadOnly()) format += "\n{{json .Image}}";
+        return List.of("docker", "--context", properties.dockerContext(), "container", "inspect", "--format", format, "--", properties.container());
     }
     @Override public State inspect() throws Exception {
         Process process = new ProcessBuilder(command()).redirectError(ProcessBuilder.Redirect.DISCARD).start();
@@ -46,7 +48,9 @@ public class DockerContainerProbe implements ContainerProbe {
     State parseOutput(byte[] bytes) throws IOException {
         // Einzelne JSON-Werte vermeiden eingebettete Anführungszeichen in Windows-Prozessargumenten.
         var lines = new String(bytes, java.nio.charset.StandardCharsets.UTF_8).strip().lines().toList();
-        var keys = List.of("status", "running", "paused", "restarting", "dead", "ports", "environment", "serverId");
+        var keys = hostReadOnly()
+            ? List.of("status", "running", "paused", "restarting", "dead", "ports", "environment", "serverId", "imageId")
+            : List.of("status", "running", "paused", "restarting", "dead", "ports", "environment", "serverId");
         if (lines.size() != keys.size()) throw new IOException("Invalid Docker output");
         var json = mapper.createObjectNode();
         for (int index = 0; index < keys.size(); index++) json.set(keys.get(index), mapper.readTree(lines.get(index)));
@@ -56,12 +60,17 @@ public class DockerContainerProbe implements ContainerProbe {
         for (String flag : List.of("running", "paused", "restarting", "dead")) if (!json.path(flag).isBoolean()) throw new IOException("Invalid Docker state");
         String status = json.path("status").asText("");
         if (!List.of("created", "running", "paused", "restarting", "removing", "exited", "dead").contains(status)) throw new IOException("Invalid Docker state");
-        boolean target = "test".equals(json.path("environment").asText()) && properties.serverId().equals(json.path("serverId").asText());
+        boolean target = hostReadOnly()
+            ? properties.expectedImageId().equals(json.path("imageId").asText())
+            : "test".equals(json.path("environment").asText()) && properties.serverId().equals(json.path("serverId").asText());
         boolean matches = false;
         for (JsonNode binding : json.path("ports").path("25565/tcp")) {
-            // Ausschließlich die veröffentlichte Loopbackadresse des getrennten Testcontainers.
-            if ("127.0.0.1".equals(binding.path("HostIp").asText()) && Integer.toString(properties.minecraftPort()).equals(binding.path("HostPort").asText())) matches = true;
+            // Hostmodus liest weiterhin nur über IPv4-Loopback; Wildcard-Binding erreicht denselben lokalen Port.
+            String address = binding.path("HostIp").asText();
+            boolean local = "127.0.0.1".equals(address) || (hostReadOnly() && "0.0.0.0".equals(address));
+            if (local && Integer.toString(properties.minecraftPort()).equals(binding.path("HostPort").asText())) matches = true;
         }
         return new State(status, json.path("running").asBoolean(), json.path("paused").asBoolean(), json.path("restarting").asBoolean(), json.path("dead").asBoolean(), target, matches);
     }
+    private boolean hostReadOnly() { return "docker-host-read-only".equals(properties.mode()); }
 }

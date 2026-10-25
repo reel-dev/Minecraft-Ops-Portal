@@ -6,7 +6,7 @@ Projektstart für Renés Minecraft-Homelab. Stand: 25.10.2026.
 
 Eine eigene Control Plane mit Angular und Spring Boot für den bestehenden Minecraft-Server auf Proxmox/Docker mit `itzg/minecraft-server`. Status, Betrieb, Konsole, Spieler, Mods, Konfiguration, Backups, Logs und Monitoring werden in einer übersichtlichen Anwendung gebündelt.
 
-**Status:** Lokal ausführbares Angular-/Spring-Boot-Grundgerüst mit Sessionanmeldung, serverbezogenen Rollen, Status-API, persistenten Jobs, Idempotenz, Serversperre und Audit implementiert. Ein optionaler lesender HTTP-Statusadapter ist gegen einen lokalen Testdienst geprüft; Standard bleibt ohne Hostverbindung. Keine echten Servermessungen oder Serveraktionen wurden ausgeführt. Bestehende Infrastruktur wurde nicht verändert. [Umsetzungsstand und offene Abnahmen](docs/10-implementierungsstand.md).
+**Status:** Lokal ausführbares Angular-/Spring-Boot-Grundgerüst mit Sessionanmeldung, serverbezogenen Rollen, Status-API, persistenten Jobs, Idempotenz, Serversperre und Audit implementiert. Status, Start, Stop und Neustart wurden am separaten lokalen Minecraft-Testserver geprüft: [Abnahme](docs/13-testserver-abnahme.md). Standard bleibt ohne Hostverbindung. Der produktive Server auf Homelab/Proxmox `docker-01` wurde nicht verbunden oder verändert. Nächster Schritt: [lesende Bestandsprüfung auf docker-01](infra/docker-01/README.md).
 
 ## Lokal starten
 
@@ -44,7 +44,7 @@ npm run typecheck
 npm run build
 ```
 
-40 Backendtests decken Sicherheits-/Jobabläufe, Bestandsaufnahme mit Revisionsschutz, serverbezogene Jobhistorie, Admin-Audit und Cursor-Blättern sowie den lesenden Agenttransport und dessen Konfiguration ab. CI ist für Backend mit Java 21 sowie Angular-Build und Typen eingerichtet. Produktionsprofil, PostgreSQL-/OIDC-Konfiguration und verbleibende Integrationen: [Backend](backend/README.md), [Frontend](frontend/README.md), [Infrastruktur](infra/README.md).
+Prüfstand der lokalen Testserver-Abnahme: 44 Portal- und 26 Agenttests erfolgreich, darunter drei ausdrücklich aktivierte lesende Live-Proben. Standardmäßig werden diese drei übersprungen. Angular-Build und Typprüfung ebenfalls erfolgreich. CI prüft Portal und Agent mit Java 21 sowie Angular. Produktionsprofil, PostgreSQL-/OIDC-Konfiguration und verbleibende Integrationen: [Backend](backend/README.md), [Frontend](frontend/README.md), [Infrastruktur](infra/README.md).
 
 Die Seite **Serverjobs** zeigt gespeicherte Jobs und ihre Details auch nach Browser-Neuladen. UNKNOWN-Jobs bleiben sichtbar und sperren weitere Aktionen; das Portal bietet keine automatische Wiederholung oder ungeprüfte Entsperrung. Neue Installationen zeigen eine echte Leerliste, keine Beispieljobs.
 
@@ -68,13 +68,19 @@ Die Seite **Bestandsaufnahme** erfasst die 15 Punkte der M01-Vorlage mit redigie
 - [Implementierungsstand und Abgrenzung](docs/10-implementierungsstand.md)
 - [Lesender Host-Agent-Vertrag](docs/11-host-agent-vertrag.md)
 - [Vorlage für die Bestandsaufnahme](docs/12-bestandsaufnahme.md)
+- [Testserver-Abnahme](docs/13-testserver-abnahme.md)
+- [Konten, Serverrechte und verschiedene Hostingarten](docs/14-konten-und-hosting.md)
+- [docker-01 lesend erfassen](infra/docker-01/README.md)
+- [Lesenden Hostanschluss vorbereiten](infra/docker-01/agent-read-only.md)
+- [Abgleich mit dem zweiten Projektchat und gemeinsame Produktbasis](docs/15-abgleich-projektchats.md)
 
 ## Struktur
 
 ```text
 frontend/       Angular-Anwendung, API-Client, Dashboard, Ausbaurouten
 backend/        Spring Boot, Security, Serverprofil, Jobs, Audit, Flyway
-infra/          Deployment-Leitplanken, noch keine Hostanbindung
+agent/          Begrenzter Hostdienst, getrennte Teststeuerung
+infra/          Eigene Test-Compose, lesende Inventur, Deployment-Leitplanken
 api/            Entwurf des API-Vertrags
 docs/           Fachkonzept, Architektur und Arbeitsplan
 references/     Originalreferenz und abrufbarer Chat-Export

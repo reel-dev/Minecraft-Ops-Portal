@@ -1,0 +1,12 @@
+Quelle: vom Nutzer übermittelte Terminalausgabe von docker-01, Gespräch am 25.10.2026.
+Exakter UTC-Erfassungszeitpunkt nicht mitgeliefert; kein direkter Hostzugriff.
+
+rene@docker-01:~$ df -h /
+Dateisystem    Größe Benutzt Verf. Verw% Eingehängt auf
+/dev/sda2       235G     21G  202G   10% /
+rene@docker-01:~$
+
+Einordnung: Root-Dateisystem nutzt laut df 21G; Anzeige gerundet.
+Keine verlässliche Vorhersage der Proxmox-Backupgröße. Nicht belegt, ob die
+Minecraft-Bind-Mountquelle auf diesem Dateisystem liegt oder extern eingebunden ist.
+Keine Aussage über Konsistenz oder Wiederherstellbarkeit eines Backups.

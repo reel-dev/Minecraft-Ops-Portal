@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.*;
 class StatusServiceTest {
     static AgentProperties properties(int port, String mode) {
         return new AgentProperties(mode, "main", Path.of("unused"), "elbracht-smp-control-test-minecraft", "desktop-linux", port,
-            Duration.ofSeconds(1), Duration.ofMillis(300));
+            Duration.ofSeconds(1), Duration.ofMillis(300), null);
     }
     @Test void disconnectedNeverInvokesDockerOrMinecraft() {
         var service = new StatusService(properties(25585, "disconnected"), () -> { throw new AssertionError(); }, () -> { throw new AssertionError(); });

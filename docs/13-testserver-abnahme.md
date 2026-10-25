@@ -26,6 +26,10 @@ Anmeldung über Spring-Security-Session und CSRF, anschließend ausschließlich 
 
 Jeder Request wurde mit demselben Idempotency-Key wiederholt und lieferte dieselbe Job-ID. Neun Auditübergänge (QUEUED, RUNNING, SUCCEEDED pro Job) wurden gelesen. Der Agent verwendet die Portal-Job-ID als eigene persistente Operations-ID. Start wird erst nach erfolgreicher Minecraft-Readiness bestätigt; Stop erst nach bestätigtem Prozessende. Logs dokumentieren sauberes Beenden, Speichern von Spielern/Welten und erneute Readiness, ohne erzwungenes Kill.
 
+Zusätzlich wurde der Agent mit demselben persistenten Ledger neu gestartet und die bereits abgeschlossene STOP-Operations-ID erneut gesendet. Er lieferte den gespeicherten Erfolg zurück; der Testserver blieb RUNNING. Damit wurde auch die Idempotenz nach Agentneustart geprüft. Maschinenlesbare Ergebnisse der drei Portaljobs: [Abnahmenachweis](../references/test-server-acceptance.json).
+
+Prüfstand dieser Abnahme: 44 Portaltests und 26 Agenttests erfolgreich, einschließlich drei lesender Live-Proben. Angular-Build und Typprüfung erfolgreich. Dies beschreibt die damalige Abnahme, keine Zusicherung, dass die lokale Vorschau dauerhaft läuft.
+
 ## Grenzen dieser Abnahme
 
 - Gilt für die neue lokale Testwelt, nicht für `docker-01` oder produktive Backups/Mods.

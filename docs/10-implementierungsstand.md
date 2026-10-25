@@ -1,10 +1,10 @@
 # Implementierungsstand des Grundgerüsts
 
-Stand: 25.10.2026. Es wurde ausschließlich lokal implementiert. Kein Minecraft-Host wurde kontaktiert oder verändert.
+Stand: 25.10.2026. Ausschließlich lokale Implementierung und Prüfung; der produktive Minecraft-Host wurde nicht kontaktiert oder verändert. Ein separater lokaler Testcontainer wurde erstellt und durch das Portal kontrolliert gestoppt, gestartet und neu gestartet: [Testserver-Abnahme](13-testserver-abnahme.md). Die unten aufgeführten älteren Erweiterungsprüfungen dokumentieren einzelne Entwicklungsstände.
 
 ## Bestätigte Angaben und offene Prüfung
 
-Minecraft `26.3` und Fabric bleiben ungeprüfte Nutzerangaben. Sie stehen getrennt von Messwerten im Serverprofil. `verifiedAt`, gemessene Version, Loader-Version, Spielerzahl und Messzeit bleiben `null`. Das mitgelieferte Profil `main` ist eine Portalregistrierung, keine Hostverbindung.
+Für Produktion bleiben Minecraft `26.3` und Fabric ungeprüfte Nutzer-/Compose-Angaben. Im getrennten lokalen Test wurde Minecraft 26.3 tatsächlich gemessen; Loader 0.19.5 und Java 25 wurden gesondert im Teststartlog geprüft. Das Standardprofil bleibt ohne Hostverbindung und zeigt fehlende Messwerte als `null`. Ein manueller Nachweiseintrag setzt `verifiedAt` nicht automatisch.
 
 M01 bleibt offen: Container, Mounts, Image-Digest, Minecraft/Fabric/Java und bestehende Sicherung sind anhand redigierter Bestandsdaten mit Quelle und Erfassungszeit zu dokumentieren. Es wurden keine Adressen oder Credentials aus dem Referenzbild übernommen.
 
@@ -14,12 +14,12 @@ M01 bleibt offen: Container, Mounts, Image-Digest, Minecraft/Fabric/Java und bes
 |---|---|---|
 | M01 | Registriertes Serverprofil, getrennte Nutzerangaben/Messwerte, Nachweisvorlage und Adminformular mit Quelle/Zeit/Revision für 15 Angaben | Tatsächliche Bestandsdaten und technische Gesamtabnahme |
 | M02 | Lokaler Sessionlogin, CSRF, serverbezogene Viewer/Operator/Admin-Prüfung; OIDC-Konfiguration für `prod` | Echter Provider, Provisionierung der Serverrechte, Deploymentprüfung |
-| M03 | API, Dashboard, UNKNOWN-/Fehler-/Leerzustände, Aktualisierung alle 5 Sekunden; lesender HTTP-Statusadapter mit Frische-/Readiness-Validierung | Hostdienst und tatsächliche Mess-/Readiness-Quelle gegen separaten Testserver abnehmen |
-| M04 | START/STOP/RESTART-Vertrag, persistente Jobs, Sperre, Idempotenz, Audit, Worker, Neustartbehandlung, Jobhistorie/Detailroute und sichtbare UNKNOWN-Sperre | Mutierender authentisierter Host-Agent und separater Testserver |
+| M03 | API, Dashboard, UNKNOWN-/Fehler-/Leerzustände, Statusadapter und tatsächliche Docker-/Minecraft-Proben am separaten Testserver abgenommen | Produktive Zuordnung, Hostgrenze und Deployment prüfen |
+| M04 | Persistente Jobs, Sperre, Idempotenz, Audit, Worker, Historie; authentisierte START/STOP/RESTART-Steuerung am isolierten Testserver abgenommen | Produktionsintegration, Recovery/Reconciliation und Betriebsabnahme |
 | M13 | Jobhistorie, UNKNOWN-Recovery, serverbezogene Admin-Auditansicht und Jobfilter | Vollständige Fehler-/Timeout-Abnahme am Host, Audit-Retention, Login-/Ablehnungsereignisse, Deploymentprüfung |
 | M05–M12, M14 | Navigierbare, ausdrücklich beschriftete Ausbauansichten; Portgrenze zum Host | RCON, SSE/Logstream, Spieler, Backup/Restore, Konfiguration, CurseForge, Metriken, Karte |
 
-Standard bleibt `DisconnectedHostAgent` ohne Netzwerk-, RCON-, Prozess- oder Dockerzugriffe. Optional ist nun `HttpStatusHostAgent` für authentisierte, ausschließlich lesende Statusanfragen vorhanden; [Vertrag und Konfiguration](11-host-agent-vertrag.md). Dieser wurde nur gegen einen lokalen Testdienst geprüft und ist nicht aktiviert. Beide Adapter sperren Schreibversuche mit HTTP 503 ohne vorgetäuschte Jobs. Ein Konfigurationsschalter allein kann keine echten Serveraktionen aktivieren.
+Standard bleibt `DisconnectedHostAgent` ohne Hostzugriffe. Optional liest `HttpStatusHostAgent` authentisiert Status; beide Adapter sperren Schreibversuche mit HTTP 503. Zusätzlich ist `HttpTestControlHostAgent` ausschließlich mit `local,test-server`, ohne `prod`, explizitem Steuermodus und Loopback-Agent erlaubt. Der Agent prüft feste Testcontainer-/Projektlabels, Testvolume und Portbindung vor jeder Mutation. Es gibt keine freigegebene Produktionssteuerung. Für docker-01 ist ein eigener Host-Lesemodus mit festem Container und exakter Image-Konfigurations-ID lokal implementiert und geprüft; er verlangt keine Testlabels. Noch kein Deployment auf docker-01. [Agent und Betriebsgrenzen](../agent/README.md).
 
 ## Entscheidungen dieses Implementierungsschritts
 
@@ -34,6 +34,12 @@ Standard bleibt `DisconnectedHostAgent` ohne Netzwerk-, RCON-, Prozess- oder Doc
 - Jobhistorie wird ab Operator pro Server gelesen. Begrenzte Seiten (1–50, Standard 20) verwenden Erstellungszeit plus UUID als stabile Reihenfolge; der Cursor ist eine vorhandene Job-ID desselben Servers. Der aktuell sperrende Job wird zusätzlich geliefert, auch auf einer älteren Seite. Daten kommen nach Browserreload aus der Portal-Datenbank; UNKNOWN bleibt gesperrt. Dashboard und Detailseite bieten keine Entsperrung oder automatische Wiederholung.
 
 ## Prüfung und Grenzen
+
+Host-Lesemodus am 25.10.: Agent-Paketbuild erfolgreich, 29 Tests erfolgreich und drei Live-Proben übersprungen (32 insgesamt). Sechs neue Tests decken Image-/Portbindung und die Ablehnung von Operationen mit gültigem Token im docker-01-Profil ab. Die bisherigen lokalen Live-Ergebnisse unten beziehen sich auf den früheren Teststand. Nachgereichte Produktionsnachweise und ein erfolgreich vom Nutzer ausgeführtes Proxmox-Backup stehen in [M01](12-bestandsaufnahme.md); Weltkonsistenz und Restore bleiben offen.
+
+Container-Vorbereitung danach: eigenes Agentimage mit Java 21/Docker CLI, separater Unix-Socket-Proxy mit festen GET/HEAD-Pfaden, eigenes Composeprojekt ohne Weltmount. Basisimages direkt aus Registry auf Digests aufgelöst; Compose-Syntax und Paketinhalt lokal geprüft. Containerbuild/-laufzeit nicht geprüft: Docker Desktop scheiterte beim lokalen Start an einer gesperrten Laufzeitdatei. Keine Fehlerbehebung durch Reset oder weitere Startversuche; kein Produktionszugriff. Das bereitgestellte ZIP ist ein vorbereitetes Paket, kein abgenommenes Deployment.
+
+Aktuelle lokale Gesamtabnahme: 44 Portaltests, 26 Agenttests einschließlich drei lesender Live-Proben, Angular-Build und Typprüfung erfolgreich. Drei echte Portaljobs mit neun Auditübergängen und wiederholten Idempotency-Keys wurden geprüft. Agentneustart mit persistentem Ledger löst eine bereits abgeschlossene Aktion nicht erneut aus. Für docker-01 ist erst die [lesende Bestandsprüfung](../infra/docker-01/README.md) vorbereitet; dort wurde nichts ausgeführt. Die folgenden Absätze beschreiben die vorausgegangenen Entwicklungsschritte.
 
 Integrationstests prüfen 401/403, Serverzugriff, echten lokalen Sessionlogin mit CSRF-Logout, Eingabevalidierung, HTTP 202/Location, Idempotenzkonflikte, parallele Jobannahme, persistente Lesbarkeit, UNKNOWN-Recovery, Workerfehler und den deaktivierten Adapter. PostgreSQL, OIDC-Provider und echte Minecraft-Readiness sind nicht durch H2-/Mocktests abgenommen.
 

@@ -1,0 +1,5 @@
+**
+!agent/
+!agent/Dockerfile
+!agent/target/
+!agent/target/smp-host-agent-0.1.0-SNAPSHOT.jar
