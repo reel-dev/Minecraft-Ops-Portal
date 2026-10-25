@@ -1,0 +1,7 @@
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+portal:
+  ui-url: http://localhost:4200

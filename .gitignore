@@ -8,3 +8,9 @@ dist/
 target/
 .idea/
 .angular/
+out-tsc/
+data/
+.tools/
+*.log
+playwright-report/
+test-results/

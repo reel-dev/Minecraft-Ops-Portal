@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: elbracht-smp-control
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:./data/portal;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DATABASE_USER:sa}
+    password: ${DATABASE_PASSWORD:}
+server:
+  address: 127.0.0.1
+  port: 8080
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: true
+  error:
+    include-message: never
+    include-stacktrace: never
+portal:
+  ui-url: ${PORTAL_UI_URL:https://localhost}
+  local-password: ${PORTAL_LOCAL_PASSWORD:}
