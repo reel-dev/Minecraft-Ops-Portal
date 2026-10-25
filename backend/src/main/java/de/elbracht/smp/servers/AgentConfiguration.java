@@ -17,6 +17,11 @@ public class AgentConfiguration {
             case "disconnected" -> new DisconnectedHostAgent();
             case "http-read-only" -> new HttpStatusHostAgent(properties, mapper, Clock.systemUTC(),
                 environment.acceptsProfiles(Profiles.of("local")) && !environment.acceptsProfiles(Profiles.of("prod")));
+            case "http-test-control" -> {
+                if (!environment.acceptsProfiles(Profiles.of("local")) || !environment.acceptsProfiles(Profiles.of("test-server")) || environment.acceptsProfiles(Profiles.of("prod")))
+                    throw new IllegalStateException("Teststeuerung erfordert ausschließlich local,test-server ohne prod");
+                yield new HttpTestControlHostAgent(properties, mapper);
+            }
             default -> throw new IllegalStateException("Unbekannter portal.agent.mode");
         };
     }

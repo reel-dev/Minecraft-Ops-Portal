@@ -10,6 +10,7 @@ public interface HostAgent {
     Status observe(String serverId);
     /** Erst zurückkehren, wenn der Zielzustand einschließlich Minecraft-Readiness geprüft ist. */
     void execute(String serverId, OperationType operation);
+    default void execute(String serverId, OperationType operation, java.util.UUID operationId) { execute(serverId, operation); }
 
     enum Lifecycle { UNKNOWN, OFFLINE, STARTING, RUNNING, STOPPING, ERROR }
     enum Health { OK, DEGRADED, FAILED, UNKNOWN }

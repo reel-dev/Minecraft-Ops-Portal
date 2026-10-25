@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: elbracht-smp-host-agent
+  datasource:
+    url: ${AGENT_DATABASE_URL:jdbc:h2:file:./data/agent-operations;DB_CLOSE_ON_EXIT=FALSE}
+    username: sa
+    password: ${AGENT_DATABASE_PASSWORD:}
+  sql:
+    init:
+      mode: always
+server:
+  address: 127.0.0.1
+  port: 8091
+  error:
+    include-message: never
+    include-stacktrace: never
+  tomcat:
+    threads:
+      max: 8
+    max-connections: 16
+    accept-count: 8
+agent:
+  mode: disconnected
+  server-id: main
+  token-file: ${AGENT_TOKEN_FILE:}
+  container: ${AGENT_CONTAINER:elbracht-smp-control-test-minecraft}
+  docker-context: ${AGENT_DOCKER_CONTEXT:default}
+  minecraft-port: 25585
+  docker-timeout: 2s
+  minecraft-timeout: 1500ms

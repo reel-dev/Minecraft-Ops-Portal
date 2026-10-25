@@ -1,0 +1,39 @@
+name: elbracht-smp-control-test
+services:
+  minecraft-test:
+    # Java 25 passend zum offiziellen Manifest für Minecraft 26.3.
+    # Registry-Digest am 25.10.2026 aus itzg/minecraft-server:java25 aufgelöst.
+    image: itzg/minecraft-server@sha256:6fd6f9bb6998b7cd06948ec6ab03fabfdf98ba3f2ec030c44069bec9a6bdf09d
+    container_name: elbracht-smp-control-test-minecraft
+    restart: "no"
+    labels:
+      de.elbracht.smp.environment: test
+      de.elbracht.smp.server-id: main
+    ports:
+      - "127.0.0.1:25585:25565"
+    volumes:
+      - test-world:/data
+    environment:
+      # Aus der ausdrücklich zur Anpassung übergebenen Konfiguration übernommen.
+      EULA: "TRUE"
+      TYPE: "FABRIC"
+      VERSION: "26.3"
+      FABRIC_LOADER_VERSION: "0.19.5"
+      TZ: "Europe/Berlin"
+      ONLINE_MODE: "TRUE"
+      MEMORY: "2G"
+      ENABLE_RCON: "FALSE"
+      ENABLE_QUERY: "FALSE"
+      ENABLE_WHITELIST: "TRUE"
+      ENFORCE_WHITELIST: "TRUE"
+      MOTD: "Elbracht SMP – isolierter Portaltest"
+      MAX_PLAYERS: "2"
+      VIEW_DISTANCE: "8"
+      SIMULATION_DISTANCE: "4"
+      PAUSE_WHEN_EMPTY_SECONDS: "-1"
+      # Keine Mods, produktiven Spieler/OP-Einträge oder externen Zugangsdaten.
+    mem_limit: 3g
+    cpus: 2
+    stop_grace_period: 90s
+volumes:
+  test-world:

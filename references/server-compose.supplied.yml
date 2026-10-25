@@ -1,0 +1,38 @@
+# Vom Nutzer am 25.10.2026 übergebene Konfiguration; keine Laufzeitbestätigung.
+# Nur Referenz, nicht mit dieser Datei starten oder die bestehende Datei ersetzen.
+services:
+  minecraft:
+    image: itzg/minecraft-server:stable
+    container_name: minecraft-server
+    restart: unless-stopped
+    ports:
+      - "25565:25565"
+    volumes:
+      - ./data:/data
+    environment:
+      EULA: "TRUE"
+      TYPE: "FABRIC"
+      FABRIC_LOADER_VERSION: "0.19.5"
+      CURSEFORGE_FILES: |
+        fabric-api
+        xaeros-world-map
+        unified-xaero-worldmap
+      VERSION: "26.3"
+      TZ: "Europe/Berlin"
+      ONLINE_MODE: "TRUE"
+      MEMORY: "8G"
+      ENFORCE_WHITELIST: "TRUE"
+      WHITELIST: |
+        reelBeats
+        Mantis29
+        Contr
+      OPS: |
+        reelBeats
+      MOTD: "Elbracht SMP"
+      MODE: "survival"
+      DIFFICULTY: "normal"
+      PLAYER_IDLE_TIMEOUT: "0"
+      PAUSE_WHEN_EMPTY_SECONDS: "-1"
+      VIEW_DISTANCE: "32"
+      SIMULATION_DISTANCE: "16"
+      ALLOW_FLIGHT: "TRUE"

@@ -13,6 +13,7 @@ import { jobStateLabel, operationLabel } from '../core/job-presentation';
     @if (error()) { <div class="error" role="alert">{{ error() }} <button (click)="refresh()">Erneut laden</button></div> }
     @if (loading()) { <p role="status">Serverprofil wird geladen …</p> }
     @if (server(); as s) {
+      @if (s.environmentLabel) { <p class="notice" role="status">{{ s.environmentLabel }}</p> }
       <section class="panel statusbar">
         <div><p class="eyebrow">{{ s.name }}</p><h2>{{ lifecycle() }}</h2><p class="muted">Gesundheit: {{ health() }} · Aktivität: {{ activity() }}</p></div>
         <div><strong>Bestandsprüfung {{ s.verifiedAt ? 'dokumentiert' : 'ausstehend' }}</strong>
@@ -27,7 +28,7 @@ import { jobStateLabel, operationLabel } from '../core/job-presentation';
           }
         </div>
       </section>
-      <p class="muted source">Messung: {{ formatTime(status()?.observedAt) }} · Quelle: {{ s.statusSource === 'HOST_AGENT_READ_ONLY' ? 'Lesender Host-Agent' : 'nicht angebunden' }} · Portalrolle: {{ s.role }}</p>
+      <p class="muted source">Messung: {{ formatTime(status()?.observedAt) }} · Quelle: {{ s.statusSource === 'HOST_AGENT_TEST_CONTROL' ? 'Lokaler Test-Host-Agent' : s.statusSource === 'HOST_AGENT_READ_ONLY' ? 'Lesender Host-Agent' : 'nicht angebunden' }} · Portalrolle: {{ s.role }}</p>
       @if (status()?.reasonCode; as code) { <p class="muted" role="status">{{ statusReason(code) }}</p> }
       @if (selected(); as type) {
         <section class="panel" aria-label="Serveraktion bestätigen"><h2>{{ type }} für {{ s.name }}</h2>

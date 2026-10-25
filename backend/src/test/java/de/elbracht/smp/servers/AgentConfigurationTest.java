@@ -28,4 +28,10 @@ class AgentConfigurationTest {
             .withPropertyValues("portal.agent.mode=http-read-only", "portal.agent.base-url=http://127.0.0.1:1", "portal.agent.token-file=unused")
             .run(app -> assertThat(app).hasFailed());
     }
+    @Test void mutationAdapterRequiresBothExplicitLocalTestProfilesAndRejectsProduction() {
+        for (String[] profiles : new String[][] { {"local"}, {"test-server"}, {"local", "test-server", "prod"} })
+            context.withInitializer(app -> app.getEnvironment().setActiveProfiles(profiles))
+                .withPropertyValues("portal.agent.mode=http-test-control", "portal.agent.base-url=http://127.0.0.1:8091", "portal.agent.token-file=unused")
+                .run(app -> assertThat(app).hasFailed());
+    }
 }

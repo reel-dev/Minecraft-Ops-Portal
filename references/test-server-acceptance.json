@@ -1,0 +1,29 @@
+[
+  {
+    "type": "STOP",
+    "jobId": "c188c055-9ff1-4c7f-8458-a778bf2a30f9",
+    "state": "SUCCEEDED",
+    "lifecycle": "OFFLINE",
+    "minecraftVersion": null,
+    "observedAt": "2026-10-25T09:33:37.738946900Z",
+    "idempotencyVerified": true
+  },
+  {
+    "type": "START",
+    "jobId": "b0430520-b641-4ac9-a6ba-0d6e611734c7",
+    "state": "SUCCEEDED",
+    "lifecycle": "RUNNING",
+    "minecraftVersion": "26.3",
+    "observedAt": "2026-10-25T09:33:50.508484800Z",
+    "idempotencyVerified": true
+  },
+  {
+    "type": "RESTART",
+    "jobId": "239c849b-e247-4fb2-9400-a19bf15a16ca",
+    "state": "SUCCEEDED",
+    "lifecycle": "RUNNING",
+    "minecraftVersion": "26.3",
+    "observedAt": "2026-10-25T09:34:03.749754500Z",
+    "idempotencyVerified": true
+  }
+]

@@ -131,10 +131,10 @@ class PortalIntegrationTest {
         worker.recover();
         Job first = jobs.submit("main", "operator", "request-0001", OperationType.RESTART, "Wartung");
         worker.run();
-        verify(agent).execute("main", OperationType.RESTART);
+        verify(agent).execute("main", OperationType.RESTART, first.jobId());
         assertThat(jobs.find("main", first.jobId()).state()).isEqualTo(Job.State.SUCCEEDED);
-        doThrow(new IllegalStateException("secret-must-not-leak")).when(agent).execute("main", OperationType.STOP);
         Job second = jobs.submit("main", "operator", "request-0002", OperationType.STOP, "Wartung");
+        doThrow(new IllegalStateException("secret-must-not-leak")).when(agent).execute("main", OperationType.STOP, second.jobId());
         worker.run();
         assertThat(jobs.find("main", second.jobId()).state()).isEqualTo(Job.State.UNKNOWN);
         assertThat(jobs.find("main", second.jobId()).errorCode()).isEqualTo("AGENT_RESULT_UNKNOWN");

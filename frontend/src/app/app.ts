@@ -24,7 +24,7 @@ import { navigation } from './routes';
         @if (error()) { <p role="alert">{{ error() }}</p> }
       </div>
     </aside>
-    <main id="content"><div class="notice"><span class="dot"></span> Entwicklungsstand · Serveraktionen deaktiviert · Status nur aus konfigurierter Messquelle</div><router-outlet /></main>
+    <main id="content"><div class="notice"><span class="dot"></span> Entwicklungsstand · Echte Messquellen erforderlich · Produktionsanbindung noch ausstehend</div><router-outlet /></main>
   `
 })
 export class App {

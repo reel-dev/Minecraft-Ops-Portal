@@ -22,7 +22,7 @@ public class JobWorker {
         for (Job job : jobs.queued()) {
             if (!jobs.claim(job)) continue;
             try {
-                agent.execute(job.serverId(), job.type());
+                agent.execute(job.serverId(), job.type(), job.jobId());
                 jobs.finish(job, Job.State.SUCCEEDED, null);
             } catch (Exception error) {
                 // Timeout/Verbindungsabbruch kann einen unbekannten Ausgang haben.

@@ -6,7 +6,8 @@ export type Operation = 'START' | 'STOP' | 'RESTART';
 export interface ServerProfile {
   id: string; name: string; reportedMinecraftVersion: string | null; reportedLoader: string | null;
   verifiedAt: string | null; role: 'VIEWER' | 'OPERATOR' | 'ADMIN'; operationsAvailable: boolean;
-  statusSource: 'DISCONNECTED' | 'HOST_AGENT_READ_ONLY';
+  statusSource: 'DISCONNECTED' | 'HOST_AGENT_READ_ONLY' | 'HOST_AGENT_TEST_CONTROL';
+  environmentLabel: string;
 }
 export interface Status {
   serverId: string; lifecycle: 'UNKNOWN' | 'OFFLINE' | 'STARTING' | 'RUNNING' | 'STOPPING' | 'ERROR';

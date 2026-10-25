@@ -1,0 +1,8 @@
+portal:
+  environment-label: ISOLIERTER LOKALER TESTSERVER – eigene Welt, keine Produktionsanbindung
+  agent:
+    mode: http-read-only
+    base-url: http://127.0.0.1:8091
+    token-file: ${PORTAL_AGENT_TOKEN_FILE}
+    server-id: main
+    request-timeout: 5s
