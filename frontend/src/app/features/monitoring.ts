@@ -1,0 +1,35 @@
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, catchError, switchMap, timer } from 'rxjs';
+import { Api, ContainerMetrics, errorMessage, MetricHistory, ServerProfile } from '../core/api';
+import { Icon } from '../core/icon';
+@Component({imports:[Icon],template:`
+<header class="page-heading"><div><p class="eyebrow">GESUNDHEIT & RESSOURCEN</p><h1>Monitoring</h1><p class="muted">Gemessene Containerwerte und dauerhaft gespeicherter Verlauf.</p></div><span class="badge" [class.success]="metrics()!==null">{{metrics()?'Live · 10 s':'Keine aktuelle Messung'}}</span></header>
+@if(error()){<p class="error" role="alert">{{error()}}</p>}
+<div class="feature-grid">@for(item of cards();track item.label){<section class="panel"><div class="metric-label"><smp-icon [name]="item.icon" />{{item.label}}</div><strong class="metric">{{item.value}}</strong><small>{{item.hint}}</small></section>}</div>
+<section class="panel"><div class="section-heading"><h2>CPU-Verlauf</h2><label>Zeitraum <select aria-label="Zeitraum des CPU-Verlaufs" [value]="hours()" (change)="setHours($any($event.target).value)"><option value="1">1 Stunde</option><option value="6">6 Stunden</option><option value="24" selected>24 Stunden</option></select></label></div>
+@if(historyError()){<p class="error" role="alert">{{historyError()}}</p>}
+@if(history();as h){<p class="source">{{h.samples.length}} echte Messpunkte · Abfrage alle {{h.intervalSeconds}} Sekunden · Aufbewahrung {{h.retentionDays}} Tage</p>
+@if(h.samples.length>1){<svg viewBox="0 0 600 160" role="img" aria-label="Gemessener CPU-Verlauf in Prozent mit sichtbaren Messlücken" style="width:100%;height:200px"><path d="M30 10H595 M30 75H595 M30 140H595" fill="none" stroke="#253746"/><text x="0" y="14" fill="#94a9bb" font-size="10">{{axisMax()}} %</text><text x="0" y="140" fill="#94a9bb" font-size="10">0 %</text>@for(segment of segments();track $index){<polyline [attr.points]="segment" fill="none" stroke="#388eff" stroke-width="2" vector-effect="non-scaling-stroke"/>}</svg><div class="section-heading source"><span>{{time(h.samples[0].observedAt)}}</span><span>{{time(h.samples[h.samples.length-1].observedAt)}}</span></div>@if(stale()){<p class="job-warning">Die letzte gespeicherte Messung ist älter als 90 Sekunden. Prüfe die aktuelle Messquelle.</p>}}
+@else{<div class="empty-state"><smp-icon name="monitoring" /><strong>{{h.configured?'Warte auf weitere echte Messpunkte':'Dauerhafte Erfassung ist noch nicht aktiviert'}}</strong><p>{{h.configured?'Ein Verlauf benötigt mindestens zwei bestätigte Messungen.':'Der Betreiber kann die Erfassung für eine angeschlossene Messquelle einschalten.'}}</p></div>}
+<p class="source">Letzte Erfassungsprüfung: {{h.collectionStatus?.checkedAt?time(h.collectionStatus!.checkedAt!):'Noch nicht geprüft'}}</p>@if(stale()&&h.collectionStatus?.code==='STORAGE_UNAVAILABLE'){<p class="error">Der Verlauf kann momentan nicht gespeichert werden. Bereits erfasste Messpunkte bleiben erhalten.</p>}@if(stale()&&h.collectionStatus?.code==='INVALID_MEASUREMENT'){<p class="job-warning">Die Messquelle liefert gerade keine vollständigen plausiblen Werte.</p>}<p class="source">Die Kurve enthält ausschließlich bestätigte Abfragen. Fehlende Messungen werden als Lücken dargestellt. Docker-CPU-Prozent kann bei mehreren Kernen über 100 % liegen.</p>}
+@else{<div class="empty-state"><smp-icon name="monitoring" /><strong>Verlauf wird geladen</strong></div>}
+</section>
+<div class="columns"><section class="panel"><h2>Minecraft-Ticks</h2><dl class="summary-list"><dt>TPS</dt><dd>Nicht verfügbar</dd><dt>MSPT</dt><dd>Nicht verfügbar</dd></dl><p class="muted">Dafür wird ein mit der konkreten Minecraft-/Fabric-Version geprüfter Exporter benötigt.</p></section><section class="panel"><h2>Weitere Datenquellen</h2><p class="muted">Die Containerhistorie liegt in der Portal-Datenbank und bleibt bei Browser- und Portal-Neustarts erhalten. Prometheus, Grafana und Loki sind noch nicht als externe Dienste konfiguriert.</p><small>Aktuelle Messung: {{observedAt()?time(observedAt()!):'—'}}</small></section></div>
+`})
+export class Monitoring {
+ private readonly api=inject(Api);private readonly destroy=inject(DestroyRef);private server:ServerProfile|null=null;
+ readonly metrics=signal<ContainerMetrics|null>(null);readonly error=signal('');readonly observedAt=signal<string|null>(null);readonly history=signal<MetricHistory|null>(null);readonly historyError=signal('');readonly hours=signal(24);
+ constructor(){this.api.servers().pipe(takeUntilDestroyed(this.destroy)).subscribe({next:s=>this.server=s[0]??null,error:e=>this.error.set(errorMessage(e))});
+ timer(300,10000).pipe(takeUntilDestroyed(this.destroy),switchMap(()=>this.server?this.api.metrics(this.server.id).pipe(catchError(e=>{this.error.set(errorMessage(e));this.metrics.set(null);return EMPTY;})):EMPTY)).subscribe(value=>{this.metrics.set(value.data);this.observedAt.set(value.observedAt);this.error.set('');});
+ timer(500,30000).pipe(takeUntilDestroyed(this.destroy)).subscribe(()=>this.loadHistory());}
+ loadHistory(){if(!this.server)return;const hours=this.hours();this.api.metricHistory(this.server.id,hours).pipe(takeUntilDestroyed(this.destroy)).subscribe({next:value=>{if(this.hours()===hours){this.history.set(value);this.historyError.set('');}},error:e=>this.historyError.set(errorMessage(e))});}
+ setHours(value:string){const hours=Number(value);if(![1,6,24].includes(hours))return;this.hours.set(hours);this.history.set(null);this.loadHistory();}
+ axisMax(){return Math.max(100,Math.ceil(Math.max(...(this.history()?.samples.map(s=>s.cpuPercent)??[0]))/50)*50);}
+ segments(){const h=this.history(),samples=h?.samples??[];if(samples.length<2)return[];const start=Date.parse(samples[0].observedAt),span=Math.max(1,Date.parse(samples[samples.length-1].observedAt)-start),axis=this.axisMax();const result:string[]=[];let segment:string[]=[];let previous=start;
+ for(const sample of samples){const instant=Date.parse(sample.observedAt);if(instant-previous>90000&&segment.length){result.push(segment.join(' '));segment=[];}segment.push((30+(instant-start)*565/span).toFixed(1)+','+(140-sample.cpuPercent*130/axis).toFixed(1));previous=instant;}if(segment.length)result.push(segment.join(' '));return result;}
+ stale(){const samples=this.history()?.samples??[];return samples.length>0&&Date.now()-Date.parse(samples[samples.length-1].observedAt)>90000;}
+ cards(){const m=this.metrics();return[{label:'CPU · Container',icon:'cpu',value:m?.CPUPerc??'—',hint:'Docker-CPU-Prozent; kann bei mehreren Kernen über 100 % liegen'},{label:'RAM · Container',icon:'ram',value:m?.MemUsage??'—',hint:'Belegter Containerspeicher / Limit; kein JVM-Heap'},{label:'Netzwerk · gesamt',icon:'network',value:m?.NetIO??'—',hint:'Empfangene / gesendete Daten seit Containerstart'},{label:'Datenträger-I/O · gesamt',icon:'files',value:m?.BlockIO??'—',hint:'Gelesen / geschrieben; keine freie Speicherkapazität'}];}
+ time(at:string){return new Date(at).toLocaleString('de-DE');}
+}
+

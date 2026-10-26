@@ -11,6 +11,7 @@ public class StatusService {
     private final AgentProperties properties;
     private final ContainerProbe docker;
     private final MinecraftProbe minecraft;
+    @org.springframework.beans.factory.annotation.Autowired(required=false) private DockerControl control;
     private final Semaphore singleProbe = new Semaphore(1);
     public StatusService(AgentProperties properties, ContainerProbe docker, MinecraftProbe minecraft) {
         this.properties = properties; this.docker = docker; this.minecraft = minecraft;
@@ -26,7 +27,9 @@ public class StatusService {
             if (!container.running() && (container.status().equals("exited") || container.status().equals("created"))) return state("OFFLINE", "OK");
             if (!container.running() || !container.portMatches()) return state("UNKNOWN", "DEGRADED");
             var result = minecraft.query();
-            return new Snapshot(properties.serverId(), "RUNNING", "OK", "NONE", result.minecraftVersion(), null, null, Instant.now(), result.playersOnline(), true);
+            DockerControl.RuntimeProfile profile=null;
+            if(control!=null&&"docker-test-control".equals(properties.mode()))try{var candidate=control.readTestRuntimeProfile();if(candidate!=null&&result.minecraftVersion().equals(candidate.minecraftVersion()))profile=candidate;}catch(Exception ignored){}
+            return new Snapshot(properties.serverId(), "RUNNING", "OK", "NONE", result.minecraftVersion(), profile==null?null:profile.loader(), profile==null?null:profile.loaderVersion(), Instant.now(), result.playersOnline(), true);
         } catch (Exception error) {
             if (error instanceof InterruptedException) Thread.currentThread().interrupt();
             // Ein fehlender Minecraft-Ping ist kein Beleg für Offline oder Startphase.

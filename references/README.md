@@ -10,6 +10,7 @@
 - docker-01-data-filesystem.supplied.txt: Minecraft-Bind-Mountquelle liegt auf dem Root-Dateisystem /dev/sda2 der VM; kein Restore- oder Weltkonsistenznachweis.
 - docker-01-host-runtime.supplied.txt: Java auf dem Host im PATH nicht verfügbar; Spielport 25565 über IPv4-/IPv6-Wildcard veröffentlicht.
 - test-server-acceptance.json: tatsächliche lokale Portaljobs STOP/START/RESTART am isolierten Testcontainer; siehe docs/13-testserver-abnahme.md.
+- rcon-test-server-acceptance.json: echte lokale RCON-/Whitelist-Abnahme mit Serverdateiprüfung, Portal-Idempotenz und Prozessneustart; siehe docs/18-rcon-minecraft-abnahme.md. Kein Simulator- oder Produktionsnachweis.
 
 - generated-image.png: tatsächlicher verfügbarer Anhang aus Homelab, unverändert übernommen; primäre visuelle Referenz.
 - homelab-export.json: gesamte über read_thread gelieferte Referenzantwort. Sie enthält nur die vom Dienst gelieferten fünf Turns, kein behauptetes Vollarchiv.

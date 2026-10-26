@@ -17,6 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuditService {
     private final JdbcTemplate jdbc;
     public AuditService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    public void recordPlan(String server,String actor,String action,UUID plan){
+        if(!java.util.Set.of("RESTORE_PLAN_CREATED","RESTORE_PLAN_CANCELLED","MOD_PLAN_CREATED","MOD_PLAN_CANCELLED","MOD_IMPORT_PLAN_CREATED").contains(action))throw new IllegalArgumentException();
+        jdbc.update("INSERT INTO audit_event (id,actor,server_id,action,outcome,occurred_at,subject_key) VALUES (?,?,?,?,'RECORDED',?,?)",UUID.randomUUID(),actor,server,action,java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC),plan.toString());
+    }
     public record Event(UUID id, String actor, String serverId, UUID jobId, String action, String outcome, Instant occurredAt,
                         String subjectKey, Long revision) {}
     public record Page(List<Event> items, UUID nextCursor) {}

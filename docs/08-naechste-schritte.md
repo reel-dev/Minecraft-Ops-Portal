@@ -1,51 +1,41 @@
 # Nächste Schritte
 
-## Vorrangiger Abgleich der Projektchats
+Aktueller Stand: 26.10.2026. Verbindliche Übersicht: [Vollendung – Arbeitsstand](19-vollendung-arbeitsstand.md). OP, Konsole/SSE, Eigenschaften, lokale vollständige Backups, Restore mit Rückweg, Modpläne einschließlich explizitem Import und Containerhistorie sind inzwischen implementiert und separat am isolierten Testziel geprüft. Der tägliche Backup-Zeitplan hat einen echten Snapshot erzeugt und einen Portal-Neustart ohne zweiten Tagesauftrag bestanden; danach wieder ausgeschaltet. [Zeitplan-Abnahme](23-backup-zeitplan-abnahme.md).
 
-Die zweite Anwendung aus „Weiter Minecraft Verwaltung“ wurde laut Nutzer noch nicht auf docker-01 gestartet. Ihr tatsächlicher Quellstand ist inzwischen separat abgerufen und lokal mit 20 erfolgreichen Tests gebaut. [Vergleich und Übernahmeplan](15-abgleich-projektchats.md): Dieses Angular-/Spring-Boot-Repository bleibt Produktbasis; RCON und Spielerabläufe werden gezielt integriert, bestehende Rollen, persistente Jobs, UNKNOWN-Sperre und Audit bleiben erhalten. Vor einem Produktionsdeployment zuerst den gemeinsamen Stand und seine Container prüfen. Weder die alte ZIP noch das vorbereitete Agentpaket jetzt parallel installieren.
+## Jetzt fortsetzen
 
-## Aktuelle Priorität: docker-01 lesend erfassen
+1. Verschlüsseltes externes Backupziel als ausdrücklich konfigurierten Adapter vorbereiten; ohne Ziel/Zugangsdaten weiterhin als nicht eingerichtet anzeigen. Die [lokale siebentägige Aufbewahrung](24-aufbewahrung-abnahme.md) mit Schutz der letzten erfolgreichen Sicherung, Admin-Vorschau und tatsächlicher synthetischer Prune-/Restoreprobe ist umgesetzt. Cloud-Replikation und die Aufbewahrung am externen Ziel fehlen weiterhin.
+2. Konsistente Portal-Datenbanksicherung und gesondertes Secret-/Entschlüsselungs-Wiederanlaufpaket ergänzen und lokal wiederherstellen.
+3. Produktionsreife Bereitstellung mit PostgreSQL, OIDC-Erstadmin, TLS und festen Hostgrenzen vorbereiten und gegen isolierte Fixtures prüfen. Keine Installation oder Mutation auf `docker-01` ohne konkreten Betriebsauftrag.
+4. Externe Monitoring-/Logkonfiguration vorbereiten und alle Fachansichten, Fehlerfälle und M01–M14 abschließend abgleichen. CurseForge bleibt ohne lokal hinterlegten Schlüssel unkonfiguriert, TPS/MSPT und Karte ohne bestätigte Quelle nicht verfügbar.
 
-Das Grundgerüst und der vertikale Testpfad sind bereits implementiert. Status sowie Stop/Start/Restart wurden an einer separaten lokalen Testwelt erfolgreich geprüft; [Abnahme](13-testserver-abnahme.md). Der produktive Anschluss bleibt unverändert.
+## Historische Planung vom 25.10.2026
 
-Container, Startversionen, VM 100, Datenquelle auf dem VM-Root-Dateisystem und ein erfolgreicher Proxmox-Backuplauf sind inzwischen anhand übermittelter Ausgaben/Screenshots dokumentiert. Restore und konsistente Weltsicherung bleiben offen. Ein eigener [Host-Lesemodus](../infra/docker-01/agent-read-only.md) ist lokal implementiert und geprüft. Als Nächstes Host-Java und Portbindung prüfen, danach den lesenden Dienst mit eigenem Token und sicherem Transport kontrolliert einrichten. Keine Testlabels auf Produktion setzen und keine produktive Steuerung aktivieren.
+Die folgenden Angaben beschreiben den damaligen Stand. Gemeinsame Produktbasis ist dieses Angular-/Spring-Boot-Repository. Der zweite Projektchat wurde anhand seines tatsächlichen Quellstands abgeglichen; kein zweites Verwaltungstool wurde auf docker-01 installiert. [Quellabgleich](15-abgleich-projektchats.md).
 
-Nachtrag: Host-Java ist nicht im PATH verfügbar, Port 25565 ist über IPv4-/IPv6-Wildcard veröffentlicht. Eine [eigene Containerbereitstellung](../infra/docker-01/container/README.md) mit Java und gefiltertem Dockerzugriff ist vorbereitet und als Paket erzeugt; Compose-Syntax geprüft. Die lokale Docker-Desktop-Instanz scheiterte beim Start mit einer gesperrten `sailor-ingest.sock`-Datei. Kein automatischer Neustart-/Resetversuch; Containerbuild und Laufzeittest bleiben offen. Kein Deployment auf docker-01.
+### Damals abgeschlossen
 
-Konten und Hosting werden [getrennt behandelt](14-konten-und-hosting.md): Mitverwalter brauchen nur Zugriff auf einen registrierten Server. Selfservice-Registrierung weiterer Hostinganschlüsse ist ein späterer Schritt.
+- Lokales Portal mit Anmeldung, serverbezogenen Rollen, persistenten Jobs, gemeinsamer Serversperre, Idempotenz, Historie und Audit.
+- Start/Stop/Neustart am getrennten lokalen Minecraft-Testserver abgenommen.
+- RCON-Online-Liste und Whitelist hinzufügen/entfernen gegen denselben echten Minecraft-Testserver abgenommen. Serverdateien bestätigen die Änderungen; Testeintrag danach entfernt, OP unverändert.
+- Agent- und Portal-Prozessneustart geprüft: alte Aktion nicht erneut ausgeführt, fünf echte Testjobs und 15 Audit-Einträge erhalten. [Aktuelle Abnahme](18-rcon-minecraft-abnahme.md).
+- Docker Desktop antwortet wieder; für diese Abnahme wurde kein Desktop-Neustart oder Reset vorgenommen.
+- Produktionsangaben und erfolgreiches Proxmox-VM-Backup dokumentiert. Gesamte Betriebs-/Restore-Abnahme weiterhin offen; [Bestandsaufnahme](12-bestandsaufnahme.md).
 
-Die folgenden Punkte sind der ursprüngliche Gesamtplan; bereits implementierte Teile werden im [aktuellen Stand](10-implementierungsstand.md) ausgewiesen.
+Prüfstand: 57 Portaltests und 60 Agenttests erfolgreich, darunter vier ausdrücklich aktivierte lesende Live-Proben. Diese vier bleiben im Standardlauf übersprungen. Frontend-Build und Typprüfung erfolgreich; aktuelle echte Testanbindung im Browser geprüft. Produktionsserver nicht kontaktiert oder geändert.
 
-## 1. Projektübernahme abschließen
+### Damals nächste Inkremente
 
-Das neue ChatGPT/Work-Projekt muss noch in einer funktionierenden Oberfläche angelegt werden. Name: Elbracht SMP Control. Dieses Paket und das verfügbare Referenzbild übernehmen, Projektanweisungen setzen. Zweiten Screenshot aus dem Ursprungs-Chat exportieren oder erneut anhängen. Frühere Chatteile nur ergänzen, wenn sie tatsächlich verfügbar werden; der vorhandene Export wird nicht als Vollarchiv ausgegeben.
+1. **OP-Verwaltung ausschließlich für Admins:** getrennte Operationsarten und Fähigkeit, persistenter Job mit Spielerziel, gemeinsame Sperre/Audit, tatsächliche Bestätigung durch Serverdateien. Operator/Viewer müssen auch bei direkten API-Aufrufen abgewiesen werden. Zunächst nur am isolierten Testanschluss abnehmen.
+2. **Konsole und eigener Logstrom (M05):** erlaubte Kommandos anhand der Portalrolle begrenzen und eindeutig von Serverlogs trennen. Keine generische Shell; Reconnect, Frische, Puffer und Sessionablauf testen. Kein freier RCON-Umweg an den Job-/Auditregeln vorbei.
+3. **Container und produktiver Leseanschluss:** die vorbereiteten Agent-/Proxyimages tatsächlich bauen und Socket-/Netzgrenzen prüfen. Danach Docker-01-Anschluss mit Dienstkonto, Tokenablage und sicherem Transport vorbereiten. Ein Proxmox-Administratorzugang ist für normale Portalaktionen nicht vorgesehen. Produktion zunächst ausschließlich lesend; keine Testlabels oder Teststeuerung auf den bestehenden Container übertragen.
+4. **Datensicherheit (M07/M08):** konsistente Weltsicherung, verschlüsseltes externes Backupziel, Retention und isolierter Proberestore. Das erfolgreiche lokale Proxmox-Backup belegt weder Cloudkopie noch Minecraft-Weltkonsistenz oder Restore.
+5. **Danach Eigenschaften, CurseForge und Monitoring:** echte Quellen und feste Versionen, keine erfundenen Mod-/Messwerte. Keine Modmutation vor gesicherter Wiederherstellbarkeit. Karte erst nach bestätigter Browserkartenquelle.
 
-## 2. Bestandsabgleich
+## Testbetrieb und Grenzen
 
-Mit redigierten Informationen arbeiten, keine Schlüssel in den Chat kopieren: Compose-Konfiguration ohne Secrets, Image-Digest, tatsächliche Minecraft-/Fabric-/Java-Versionen, Containername, VM-/LXC-Aufteilung und Mounts erfassen. mods-Verzeichnis inventarisieren, bekannte Projekte mit Dateihashes zuordnen und RCON-Erreichbarkeit intern prüfen. Vor Änderungen eine bestehende Sicherung prüfen.
+Die normale Portal-Voreinstellung bleibt ohne Hostverbindung. Test-Whitelist benötigt ausdrückliche Freischaltungen in Portal und Agent sowie eine passende RCON-Zuordnung; [Gates](17-whitelist-testjobs.md), [neue Docker-Testdateiquelle und RCON-Override](18-rcon-minecraft-abnahme.md). OP bleibt noch gesperrt. Keine Ledger-/Datenbanklöschung zum Umgehen ungeklärter Jobs.
 
-## 3. Offene Entscheidungen treffen
+Konten, Serverrechte und Hosting bleiben getrennt: Mitverwalter benötigen kein eigenes Hosting. Selfservice-Registrierung weiterer Hostinganschlüsse, Einladungen und Mehrmandantenbetrieb sind noch nicht implementiert; [Produktmodell](14-konten-und-hosting.md).
 
-| Entscheidung | Vorschlag | Noch zu klären |
-|---|---|---|
-| Umfang | Ein Server im MVP | Weitere Server absehbar? |
-| Zugriff | Zunächst LAN/VPN | Öffentliche Erreichbarkeit benötigt? |
-| Anmeldung | OIDC + Backend-Session | Vorhandener Identity Provider? |
-| Betrieb | Separater begrenzter Host-Agent | VM/LXC und Hostgrenzen? |
-| Cloud | Restic-kompatibles Ziel | Anbieter, Bucket, Kosten, Schutzrechte? |
-| Sicherung | Täglich 03:00 Europe/Berlin | Wartungsfenster, Weltgröße, RPO/RTO? |
-| Mods | Portal-Manifest, gepinnte Dateien | itzg-Verwaltung bereits aktiv? |
-| Karte | Später, nach Quellprüfung | Welche Xaero-Komponenten genau? |
-| Monitoring | Prometheus/Grafana/Loki | Vorhandene Installation/Exporter? |
-
-## 4. Ersten vertikalen MVP implementieren
-
-Framework-/Java-Versionen auswählen und pinnen. Angular-Grundlayout aus Bildreferenz, Spring-Boot-Anmeldung, Serverprofil, echter Statusadapter, begrenzte Restart-Operation und dauerhafter Jobstatus. Zunächst gegen einen getrennten Testserver prüfen. Keine produktive Serveradresse oder Zugangsdaten im Quellcode.
-
-## 5. Daten schützen und Funktionsumfang ausbauen
-
-Konsistentes Cloudbackup und isolierten Restoretest fertigstellen. Dann Spieler/RCON/Logs, Eigenschaften und Modmanagement in der Reihenfolge des Backlogs umsetzen. Jede neue privilegierte Aktion erhält Rollenprüfung, Audit, Sperre, Fehlerbehandlung und klare UI-Rückmeldung.
-
-## Übergabe an eine nächste Arbeitssitzung
-
-„Lies README, Projektanweisungen und docs/01-kontext.md von Elbracht SMP Control. Beginne mit dem Bestandsabgleich. Behandle 26.3 als ungeprüfte Nutzerangabe und den Screenshot ausschließlich als Gestaltungsvorlage. Implementiere anschließend M01–M04 gegen einen Testserver und dokumentiere offene Infrastrukturfragen. Verändere keine bestehende produktive Welt im Rahmen der Bestandsaufnahme.“
+Produktive OIDC-Anmeldung, PostgreSQL-Betrieb, TLS/Proxygrenzen, Backupziel und Monitoringquellen müssen vor Deployment konkret geprüft werden. Genau eine Portal- und Agentinstanz pro zugeordneter Steuerung, bis ein gesondertes Lease-/Recovery-Konzept umgesetzt ist.

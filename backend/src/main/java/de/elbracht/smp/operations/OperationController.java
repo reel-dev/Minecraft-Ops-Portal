@@ -22,13 +22,19 @@ public class OperationController {
     private final JobService jobs;
     private final ServerAccess access;
     public OperationController(JobService jobs, ServerAccess access) { this.jobs = jobs; this.access = access; }
-    public record Request(@NotNull OperationType type, @NotBlank @Size(max = 240) String reason) {}
+    public record Request(@NotNull OperationType type, @NotBlank @Size(max = 240) String reason,
+                          @Pattern(regexp = "[A-Za-z0-9_]{3,16}") String targetName,
+                          @Size(max = 512) String commandText,
+                          @Pattern(regexp="[a-f0-9]{64}") String snapshotId) {}
     @PostMapping("/operations")
     public ResponseEntity<Job> submit(@PathVariable String serverId,
         @RequestHeader("Idempotency-Key") @Pattern(regexp = "[A-Za-z0-9_-]{8,128}") String key,
         @Valid @RequestBody Request request, Authentication auth) {
         access.require(auth, serverId, true);
-        Job job = jobs.submit(serverId, auth.getName(), key, request.type(), request.reason());
+        if (request.type().operatorOperation()) access.requireAdmin(auth, serverId);
+        if (request.type() == OperationType.RESTORE_TEST || request.type()==OperationType.RESTORE_APPLY || request.type()==OperationType.MOD_APPLY) access.requireAdmin(auth, serverId);
+        if (request.type() == OperationType.CONSOLE) ConsolePolicy.validate(request.commandText(), "ADMIN".equals(access.role(auth, serverId)));
+        Job job = jobs.submit(serverId, auth.getName(), key, request.type(), request.reason(), request.targetName(), request.commandText(), request.snapshotId());
         return ResponseEntity.accepted().location(URI.create("/api/v1/servers/" + serverId + "/jobs/" + job.jobId())).body(job);
     }
     @GetMapping("/jobs/{jobId}")
@@ -36,6 +42,7 @@ public class OperationController {
         access.require(auth, serverId, true);
         return jobs.find(serverId, jobId);
     }
+    @PostMapping("/jobs/{jobId}/reconcile") public Job reconcile(@PathVariable String serverId,@PathVariable UUID jobId,Authentication auth){access.requireAdmin(auth,serverId);return jobs.reconcile(serverId,jobId,auth.getName());}
     @GetMapping("/jobs")
     public JobService.Page history(@PathVariable String serverId,
         @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,

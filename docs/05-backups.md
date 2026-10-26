@@ -1,5 +1,7 @@
 # Backup- und Restore-Konzept
 
+Lokale Umsetzung und tatsächliche Nachweise: [vollständige Restore-Abnahme](21-wiederherstellung-abnahme.md), [tägliche Planung](23-backup-zeitplan-abnahme.md), [siebentägige Aufbewahrung](24-aufbewahrung-abnahme.md). Externes Cloudziel und Portal-/Secret-Wiederherstellung sind weiterhin offen; die nachstehenden Vorgaben bleiben der vollständige Zielumfang.
+
 Vorgabe: Cloud-Backups mit sieben Tagen Aufbewahrung, Restic als Werkzeug. Anbieter und Repositoryziel sind offen. Vorschlag: täglich 03:00 Europe/Berlin plus manuell und vor Änderungen. RPO 24 Stunden, RTO zunächst 60 Minuten als zu messende Zielwerte. Zeitplanung muss Sommer-/Winterzeit eindeutig behandeln und einen täglichen Lauf sicherstellen.
 
 ## Umfang

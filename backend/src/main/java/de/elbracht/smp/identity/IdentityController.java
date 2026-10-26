@@ -14,7 +14,8 @@ public class IdentityController {
     public IdentityController(Environment environment) { this.environment = environment; }
     @GetMapping("/api/v1/auth")
     public Map<String, String> auth() {
-        return Map.of("loginUrl", environment.acceptsProfiles(Profiles.of("prod")) ? "/oauth2/authorization/portal" : "/login");
+        boolean production=environment.acceptsProfiles(Profiles.of("prod"));
+        return Map.of("loginUrl",production?"/oauth2/authorization/portal":"/sign-in","environmentLabel",production?"Betriebsumgebung":"Lokale Umgebung");
     }
     @GetMapping("/api/v1/csrf")
     public Map<String, String> csrf(CsrfToken token) {

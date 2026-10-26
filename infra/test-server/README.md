@@ -13,6 +13,8 @@ Diese Compose-Datei ersetzt niemals die unter `references/server-compose.supplie
 | Speicher | JVM 2 GiB, Containerlimit 3 GiB, 2 CPUs |
 | Zusätzliche Mods / RCON | keine / deaktiviert |
 
+Die Basisdatei lässt RCON deaktiviert. Für die erfolgreiche [echte RCON-/Whitelist-Abnahme](../../docs/18-rcon-minecraft-abnahme.md) wurde ausdrücklich `compose.rcon.yml` zusätzlich geladen. Das Override aktiviert nur am lokalen Testcontainer RCON auf `127.0.0.1:25595`, verlangt `SMP_TEST_RCON_PASSWORD` aus einer externen Secretquelle und verändert keine produktive Compose. Vor einem Aufruf beide Dateien zusammen mit `config --quiet` prüfen; vollständige Konfigurations-/Env-Ausgaben enthalten sonst das Testpasswort. Daten und Ledger erhalten. Das Override nicht mit Produktionsdateien kombinieren.
+
 EULA=TRUE stammt aus der vom Nutzer ausdrücklich zur Anpassung übergebenen Konfiguration. Es werden weder produktive Whitelist-/OP-Einträge noch CurseForge-Zugangsdaten übernommen. Das Testimage erzeugt eine neue Welt. Der geprüfte Digest ist kein Nachweis des auf `docker-01` tatsächlich laufenden Images.
 
 Aus dem Repositoryroot unter Windows/Docker Desktop:

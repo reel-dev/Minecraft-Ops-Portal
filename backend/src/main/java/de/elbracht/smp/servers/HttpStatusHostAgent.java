@@ -91,6 +91,45 @@ public final class HttpStatusHostAgent implements HostAgent, AutoCloseable {
         String minecraftVersion, String loader, String loaderVersion, Instant observedAt,
         Integer playersOnline, Boolean minecraftReady) {}
 
+    @Override public OnlinePlayers onlinePlayers(String serverId) {
+        if (!properties.serverId().equals(serverId)) return playersUnknown(serverId, "AGENT_SERVER_NOT_CONFIGURED");
+        var uri = properties.baseUrl().resolve("/agent/v1/servers/" + serverId + "/players/online");
+        var request = HttpRequest.newBuilder(uri).timeout(properties.requestTimeout())
+            .header("Authorization", authorization).header("Accept", "application/json").GET().build();
+        var pending = client.sendAsync(request, info -> new LimitedBodySubscriber(MAX_BODY_BYTES));
+        try {
+            var response = pending.get(properties.requestTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            if (response.statusCode() != 200) return playersUnknown(serverId, "AGENT_PLAYERS_UNAVAILABLE");
+            if (!response.headers().firstValue("Content-Type").orElse("").split(";", 2)[0].trim().equalsIgnoreCase("application/json"))
+                return playersUnknown(serverId, "AGENT_INVALID_RESPONSE");
+            var tree = mapper.readTree(response.body());
+            if (tree == null || !tree.path("serverId").isTextual() || !tree.path("observedAt").isTextual()
+                    || !tree.path("names").isArray()) return playersUnknown(serverId, "AGENT_INVALID_RESPONSE");
+            for (var name : tree.path("names"))
+                if (!name.isTextual()) return playersUnknown(serverId, "AGENT_INVALID_RESPONSE");
+            var value = mapper.treeToValue(tree, OnlinePlayers.class);
+            if (value == null || !serverId.equals(value.serverId()) || value.names() == null || value.names().size() > 500
+                    || value.reasonCode() != null || value.observedAt() == null)
+                return playersUnknown(serverId, "AGENT_INVALID_RESPONSE");
+            var unique = new java.util.HashSet<String>();
+            for (String name : value.names())
+                if (name == null || !name.matches("[A-Za-z0-9_]{3,16}") || !unique.add(name.toLowerCase(java.util.Locale.ROOT)))
+                    return playersUnknown(serverId, "AGENT_INVALID_RESPONSE");
+            if (value.observedAt().isBefore(clock.instant().minus(properties.maxStatusAge()))
+                    || value.observedAt().isAfter(clock.instant().plusSeconds(5)))
+                return playersUnknown(serverId, "AGENT_STALE_STATUS");
+            return value;
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            return playersUnknown(serverId, "AGENT_INTERRUPTED");
+        } catch (Exception error) {
+            return playersUnknown(serverId, "AGENT_PLAYERS_UNAVAILABLE");
+        } finally { if (!pending.isDone()) pending.cancel(true); }
+    }
+    private static OnlinePlayers playersUnknown(String serverId, String code) {
+        return new OnlinePlayers(serverId, null, null, code);
+    }
+
     private boolean valid(Snapshot value, String serverId) {
         if (value == null || !serverId.equals(value.serverId()) || value.lifecycle() == null
             || value.health() == null || value.activity() == null || value.observedAt() == null

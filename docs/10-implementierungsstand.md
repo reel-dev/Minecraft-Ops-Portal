@@ -1,5 +1,7 @@
 # Implementierungsstand des Grundgerüsts
 
+**Aktueller Stand vom 26.10.2026:** [Vollendung – Arbeitsstand](19-vollendung-arbeitsstand.md), [Restore](21-wiederherstellung-abnahme.md), [Modverwaltung und Import](22-modplan-abnahme.md), [täglicher Backup-Zeitplan](23-backup-zeitplan-abnahme.md), [Aufbewahrung](24-aufbewahrung-abnahme.md). 117 Backendtests und 100 Agenttests ohne Fehler. Im Standardlauf vier PostgreSQL- bzw. fünf Agent-Live-Prüfungen übersprungen; zusätzliche echte Restic-Probe erfolgreich. Angular-Typprüfung und Produktionsbuild erfolgreich. Die folgenden Einträge dokumentieren frühere Inkremente und sind keine aktuelle Liste fehlender Funktionen. Produktion weiterhin unverbunden und unverändert.
+
 Stand: 25.10.2026. Ausschließlich lokale Implementierung und Prüfung; der produktive Minecraft-Host wurde nicht kontaktiert oder verändert. Ein separater lokaler Testcontainer wurde erstellt und durch das Portal kontrolliert gestoppt, gestartet und neu gestartet: [Testserver-Abnahme](13-testserver-abnahme.md). Die unten aufgeführten älteren Erweiterungsprüfungen dokumentieren einzelne Entwicklungsstände.
 
 ## Bestätigte Angaben und offene Prüfung
@@ -10,6 +12,12 @@ M01 bleibt offen: Container, Mounts, Image-Digest, Minecraft/Fabric/Java und bes
 
 ## Technische Umsetzung
 
+Neuester Stand: [RCON und Whitelist gegen echten Minecraft-Testserver abgenommen](18-rcon-minecraft-abnahme.md). Der beim Live-Test gefundene RCON-Reihenfolgefehler ist behoben; die feste Docker-Testdateiquelle bestätigt Änderungen direkt im zugeordneten Container. Beide Whitelist-Jobs, Idempotenz und Prozessneustarts erfolgreich. 57 Portaltests sowie 60 Agenttests einschließlich vier aktivierter Live-Proben erfolgreich. Kein Produktionszugriff. Die folgenden Erweiterungsnotizen beschreiben ihre jeweiligen früheren Prüfstände.
+
+Aktueller Nachtrag: [Whitelist hinzufügen/entfernen als Testjobs](17-whitelist-testjobs.md) sind in Portal, Agent und Angular integriert. Spielerziel ist Teil der dauerhaften Jobs und der Idempotenz; gleiche Sperre/Audit wie Lifecycle, eigener Test-RCON-Modus, Datei-Nachprüfung und OP-Schutz. Produktionsfreigabe bleibt aus. Prüfung: 57 Portaltests und 52 Agenttests erfolgreich, drei Live-Proben übersprungen; Angular-Build/Typprüfung und Browserablauf gegen API-Simulator erfolgreich. Echte Minecraft-RCON-Abnahme weiterhin offen.
+
+Erster Übernahmeschritt aus dem zweiten Chat: Online-Spielerabruf ausschließlich lesend über RCON → Agent → Portal → Angular. Gegen TCP-/HTTP-Simulatoren und Serverrechte geprüft; Vorschau zeigt ohne Anbindung ausdrücklich „nicht verfügbar“. Kein Produktionsanschluss, keine freien Kommandos oder Whitelist-/OP-Mutationen. [Details und aktuelle Prüfung: 50 Portaltests, 38 Agenttests erfolgreich, drei Live-Proben übersprungen](16-rcon-online-spieler.md).
+
 | Backlog | Vorhanden | Noch offen zur MVP-Abnahme |
 |---|---|---|
 | M01 | Registriertes Serverprofil, getrennte Nutzerangaben/Messwerte, Nachweisvorlage und Adminformular mit Quelle/Zeit/Revision für 15 Angaben | Tatsächliche Bestandsdaten und technische Gesamtabnahme |
@@ -17,7 +25,8 @@ M01 bleibt offen: Container, Mounts, Image-Digest, Minecraft/Fabric/Java und bes
 | M03 | API, Dashboard, UNKNOWN-/Fehler-/Leerzustände, Statusadapter und tatsächliche Docker-/Minecraft-Proben am separaten Testserver abgenommen | Produktive Zuordnung, Hostgrenze und Deployment prüfen |
 | M04 | Persistente Jobs, Sperre, Idempotenz, Audit, Worker, Historie; authentisierte START/STOP/RESTART-Steuerung am isolierten Testserver abgenommen | Produktionsintegration, Recovery/Reconciliation und Betriebsabnahme |
 | M13 | Jobhistorie, UNKNOWN-Recovery, serverbezogene Admin-Auditansicht und Jobfilter | Vollständige Fehler-/Timeout-Abnahme am Host, Audit-Retention, Login-/Ablehnungsereignisse, Deploymentprüfung |
-| M05–M12, M14 | Navigierbare, ausdrücklich beschriftete Ausbauansichten; Portgrenze zum Host | RCON, SSE/Logstream, Spieler, Backup/Restore, Konfiguration, CurseForge, Metriken, Karte |
+| M05–M06 | RCON-Leseabruf und Test-Whitelist-Jobs bis Angular integriert; gemeinsame Sperre, Idempotenz, Audit, OP-Schutz; Simulator-/Rechteprüfung | Echte RCON-Testserverabnahme, tatsächliche Datenmount-Zuordnung, freie Konsole/Rechte, Logstream, OP-Administration und UUID-/Offline-Verhalten |
+| M07–M12, M14 | Navigierbare, ausdrücklich beschriftete Ausbauansichten; Portgrenze zum Host | Backup/Restore, Konfiguration, CurseForge, Metriken, Karte |
 
 Standard bleibt `DisconnectedHostAgent` ohne Hostzugriffe. Optional liest `HttpStatusHostAgent` authentisiert Status; beide Adapter sperren Schreibversuche mit HTTP 503. Zusätzlich ist `HttpTestControlHostAgent` ausschließlich mit `local,test-server`, ohne `prod`, explizitem Steuermodus und Loopback-Agent erlaubt. Der Agent prüft feste Testcontainer-/Projektlabels, Testvolume und Portbindung vor jeder Mutation. Es gibt keine freigegebene Produktionssteuerung. Für docker-01 ist ein eigener Host-Lesemodus mit festem Container und exakter Image-Konfigurations-ID lokal implementiert und geprüft; er verlangt keine Testlabels. Noch kein Deployment auf docker-01. [Agent und Betriebsgrenzen](../agent/README.md).
 

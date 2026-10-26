@@ -1,12 +1,12 @@
 # Elbracht SMP Control
 
-Projektstart für Renés Minecraft-Homelab. Stand: 25.10.2026.
+Control Plane für Renés Minecraft-Homelab. Stand: 26.10.2026.
 
 ## Ziel
 
 Eine eigene Control Plane mit Angular und Spring Boot für den bestehenden Minecraft-Server auf Proxmox/Docker mit `itzg/minecraft-server`. Status, Betrieb, Konsole, Spieler, Mods, Konfiguration, Backups, Logs und Monitoring werden in einer übersichtlichen Anwendung gebündelt.
 
-**Status:** Lokal ausführbares Angular-/Spring-Boot-Grundgerüst mit Sessionanmeldung, serverbezogenen Rollen, Status-API, persistenten Jobs, Idempotenz, Serversperre und Audit implementiert. Status, Start, Stop und Neustart wurden am separaten lokalen Minecraft-Testserver geprüft: [Abnahme](docs/13-testserver-abnahme.md). Standard bleibt ohne Hostverbindung. Der produktive Server auf Homelab/Proxmox `docker-01` wurde nicht verbunden oder verändert. Nächster Schritt: [lesende Bestandsprüfung auf docker-01](infra/docker-01/README.md).
+**Status:** Lokal ausführbare Angular-/Spring-Boot-Anwendung mit dunklem Dashboard, Anmeldung und Rollen, Status, Konsole, Spielern/Whitelist/OP, Konfiguration, Logs, Messwerthistorie, verschlüsselten lokalen Backups, Restore- und Modplänen sowie persistenten Jobs/Audit. Die kritischen Abläufe sind am separaten lokalen Minecraft-Testserver geprüft, einschließlich kontrollierter Fehlerrücknahme: [aktueller Arbeitsstand und offene Punkte](docs/19-vollendung-arbeitsstand.md), [Restore-Abnahme](docs/21-wiederherstellung-abnahme.md), [Mod-/Import-Abnahme](docs/22-modplan-abnahme.md). Das vollständige Projekt ist noch in Arbeit: Cloud-Backup, Portal-Wiederanlaufpaket und produktionsreife Bereitstellung fehlen. Standard bleibt ohne Hostverbindung. Der produktive Server auf Homelab/Proxmox `docker-01` wurde nicht verbunden oder verändert.
 
 ## Lokal starten
 
@@ -36,6 +36,8 @@ Die lokale Portal-Datenbank liegt unter `backend/data/` und enthält keine Minec
 
 ## Prüfen
 
+Aktueller Prüfstand: 117 Portaltests und 100 Agenttests ohne Fehler. Im Standardlauf sind vier PostgreSQL-Tests sowie beim Agenten vier Minecraft-Live-Proben und eine gesonderte Restic-Probe übersprungen. Die PostgreSQL-Prüfungen wurden zuvor zusätzlich mit einer eigenen lokalen Datenbank erfolgreich ausgeführt; der vollständige Agentlauf mit aktivierter synthetischer Restic-Probe ist ebenfalls erfolgreich. Angular-Typprüfung und Produktionsbuild erfolgreich. RCON-/Spieler-/Konfigurations-/Restore-/Modabläufe sowie [tägliche Backup-Planung](docs/23-backup-zeitplan-abnahme.md) und [lokale Aufbewahrung](docs/24-aufbewahrung-abnahme.md) sind gesondert belegt. Standard bleibt ohne RCON-Anbindung und ohne Produktionsänderungen.
+
 ```powershell
 cd backend
 ./mvnw.cmd verify
@@ -44,7 +46,7 @@ npm run typecheck
 npm run build
 ```
 
-Prüfstand der lokalen Testserver-Abnahme: 44 Portal- und 26 Agenttests erfolgreich, darunter drei ausdrücklich aktivierte lesende Live-Proben. Standardmäßig werden diese drei übersprungen. Angular-Build und Typprüfung ebenfalls erfolgreich. CI prüft Portal und Agent mit Java 21 sowie Angular. Produktionsprofil, PostgreSQL-/OIDC-Konfiguration und verbleibende Integrationen: [Backend](backend/README.md), [Frontend](frontend/README.md), [Infrastruktur](infra/README.md).
+Die früheren Prüfstände sind in den jeweiligen Abnahmedokumenten festgehalten. CI prüft Portal und Agent mit Java 21 sowie Angular. Produktionsprofil, PostgreSQL-/OIDC-Konfiguration und verbleibende Integrationen: [Backend](backend/README.md), [Frontend](frontend/README.md), [Infrastruktur](infra/README.md).
 
 Die Seite **Serverjobs** zeigt gespeicherte Jobs und ihre Details auch nach Browser-Neuladen. UNKNOWN-Jobs bleiben sichtbar und sperren weitere Aktionen; das Portal bietet keine automatische Wiederholung oder ungeprüfte Entsperrung. Neue Installationen zeigen eine echte Leerliste, keine Beispieljobs.
 
@@ -73,6 +75,9 @@ Die Seite **Bestandsaufnahme** erfasst die 15 Punkte der M01-Vorlage mit redigie
 - [docker-01 lesend erfassen](infra/docker-01/README.md)
 - [Lesenden Hostanschluss vorbereiten](infra/docker-01/agent-read-only.md)
 - [Abgleich mit dem zweiten Projektchat und gemeinsame Produktbasis](docs/15-abgleich-projektchats.md)
+- [Lesende RCON-/Online-Spielerintegration](docs/16-rcon-online-spieler.md)
+- [Whitelist-Testjobs, Gates und Abnahmegrenzen](docs/17-whitelist-testjobs.md)
+- [Echte Minecraft-RCON-/Whitelist-Abnahme](docs/18-rcon-minecraft-abnahme.md)
 
 ## Struktur
 

@@ -1,5 +1,7 @@
 # Abnahme der getrennten lokalen Testumgebung
 
+Ergänzung: Die spätere [RCON-/Whitelist-Abnahme am selben echten Testserver](18-rcon-minecraft-abnahme.md) ist ebenfalls erfolgreich. Sie ergänzt die hier dokumentierten drei Lifecycle-Jobs um zwei Whitelist-Jobs und erhält deren Datenbanken/History.
+
 Stand: 25.10.2026. Geprüft auf dem lokalen Docker-Desktop-Kontext `desktop-linux`. Die Proxmox-Instanz `docker-01` und der produktive Container `minecraft-server` wurden nicht verbunden oder verändert.
 
 ## Quelle und Trennung

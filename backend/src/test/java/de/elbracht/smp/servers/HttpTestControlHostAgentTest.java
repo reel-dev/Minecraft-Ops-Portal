@@ -21,7 +21,7 @@ class HttpTestControlHostAgentTest {
     @TempDir Path directory;
     private HttpServer server;
     private final AtomicInteger posts = new AtomicInteger();
-    private boolean wrongId, unknownStatus, redirect;
+    private boolean wrongId, wrongTarget, unknownStatus, redirect;
     private Path secret;
     private final JsonMapper mapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
     @BeforeEach void start() throws Exception {
@@ -32,7 +32,8 @@ class HttpTestControlHostAgentTest {
             assertThat(exchange.getRequestHeaders().getFirst("Authorization")).isEqualTo("Bearer test-control-token-0123456789abcdef");
             var json = mapper.readTree(exchange.getRequestBody().readAllBytes());
             if (redirect) { exchange.getResponseHeaders().set("Location", "/should-not-follow"); exchange.sendResponseHeaders(302, -1); exchange.close(); return; }
-            String response = "{\"operationId\":\"" + (wrongId ? UUID.randomUUID() : json.path("operationId").asText()) + "\",\"type\":\"" + json.path("type").asText() + "\",\"state\":\"SUCCEEDED\"}";
+            String response = "{\"operationId\":\"" + (wrongId ? UUID.randomUUID() : json.path("operationId").asText()) + "\",\"type\":\"" + json.path("type").asText() + "\",\"state\":\"SUCCEEDED\""
+                + (json.hasNonNull("targetName") ? ",\"targetName\":\"" + (wrongTarget ? "OtherPlayer" : json.path("targetName").asText()) + "\"" : "") + "}";
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8); exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length); exchange.getResponseBody().write(bytes); exchange.close();
         });
@@ -45,8 +46,11 @@ class HttpTestControlHostAgentTest {
     }
     @AfterEach void stop() { server.stop(0); }
     private HttpTestControlHostAgent adapter() {
+        return adapter(false);
+    }
+    private HttpTestControlHostAgent adapter(boolean whitelistEnabled) {
         return new HttpTestControlHostAgent(new AgentProperties("http-test-control", URI.create("http://127.0.0.1:" + server.getAddress().getPort()), secret,
-            "main", Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(30)), mapper);
+            "main", Duration.ofSeconds(1), Duration.ofSeconds(1), Duration.ofSeconds(30)), mapper, whitelistEnabled);
     }
     @Test void correlatesPersistentJobIdAndVerifiesReadinessAfterSuccess() {
         try (var agent = adapter()) {
@@ -69,6 +73,22 @@ class HttpTestControlHostAgentTest {
             assertThat(posts.get()).isZero(); redirect = true;
             assertThatThrownBy(() -> agent.execute("main", OperationType.START, UUID.randomUUID())).isInstanceOf(IllegalStateException.class);
             assertThat(posts.get()).isEqualTo(1);
+        }
+    }
+    @Test void whitelistNeedsExplicitCapabilityAndCorrelatesTheExactTarget() {
+        try (var disabled = adapter()) {
+            assertThat(disabled.playerOperationsAvailable()).isFalse();
+            assertThatThrownBy(() -> disabled.execute("main", OperationType.WHITELIST_ADD, UUID.randomUUID(), "TestPlayer")).isInstanceOf(IllegalStateException.class);
+            assertThat(posts.get()).isZero();
+        }
+        try (var enabled = adapter(true)) {
+            assertThat(enabled.playerOperationsAvailable()).isTrue();
+            enabled.execute("main", OperationType.WHITELIST_ADD, UUID.randomUUID(), "TestPlayer");
+            assertThat(posts.get()).isEqualTo(1);
+            wrongTarget = true;
+            assertThatThrownBy(() -> enabled.execute("main", OperationType.WHITELIST_REMOVE, UUID.randomUUID(), "TestPlayer")).isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(() -> enabled.execute("main", OperationType.WHITELIST_ADD, UUID.randomUUID(), "bad;op")).isInstanceOf(IllegalStateException.class);
+            assertThat(posts.get()).isEqualTo(2);
         }
     }
 }

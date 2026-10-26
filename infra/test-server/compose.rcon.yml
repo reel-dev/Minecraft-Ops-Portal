@@ -1,0 +1,10 @@
+# Optional override for this isolated test project only. Never merge with production Compose.
+services:
+  minecraft-test:
+    ports:
+      - "127.0.0.1:25595:25575"
+    environment:
+      ENABLE_RCON: "TRUE"
+      RCON_PORT: "25575"
+      RCON_PASSWORD: ${SMP_TEST_RCON_PASSWORD:?Set an external random test RCON password}
+      BROADCAST_RCON_TO_OPS: "FALSE"

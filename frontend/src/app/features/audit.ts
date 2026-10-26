@@ -12,6 +12,7 @@ import { auditActionLabel, auditOutcomeLabel, berlinTime } from '../core/job-pre
     @if (loading()) { <p role="status">Audit wird geladen …</p> }
     @if (error()) { <div class="error" role="alert">{{ error() }} <button (click)="reload.next()">Erneut laden</button></div> }
     @if (server(); as s) {
+      @if (s.environmentLabel) { <p class="notice">{{ s.environmentLabel }}</p> }
       @if (s.role !== 'ADMIN') { <section class="panel empty">Das Audit-Protokoll erfordert Adminrechte für diesen Server.</section> }
       @else {
         @if (jobId(); as id) { <section class="panel"><p>Gefiltert auf Job <code>{{ id }}</code></p><div class="actions"><a [routerLink]="['/jobs', id]">Zum Job →</a><a routerLink="/audit">Alle Ereignisse</a></div></section> }

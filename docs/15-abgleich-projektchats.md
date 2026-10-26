@@ -1,5 +1,7 @@
 # Abgleich der beiden Entwicklungsstände
 
+**Fortschritt nach dem Abgleich:** RCON-Transport und lesender Online-Spielerabruf sind inzwischen gezielt in Agent, Portal und Angular übernommen; [Umfang und Tests](16-rcon-online-spieler.md). Die unten dokumentierte Ausgangsanalyse bleibt nachvollziehbar. Whitelist/OP, freie Konsole und Produktionsanbindung sind noch nicht zusammengeführt.
+
 Stand: 25.10.2026. Der Nutzer bestätigt: ZIP aus „Weiter Minecraft Verwaltung“ noch nicht nach docker-01 übertragen oder gestartet. Damit gibt es nach aktuellem Nachweis kein zweites installiertes Verwaltungstool. Keine Nachricht an den anderen Chat gesendet, keine Site geändert oder veröffentlicht.
 
 ## Tatsächlich geprüfte Quellen

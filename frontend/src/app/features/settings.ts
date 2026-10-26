@@ -1,0 +1,27 @@
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap } from 'rxjs';
+import { Api, errorMessage, ServerProfile } from '../core/api';
+import { Icon } from '../core/icon';
+@Component({ imports:[Icon], template: `
+<header><p class="eyebrow">PORTAL & VERBINDUNGEN</p><h1>Einstellungen</h1><p class="muted">Portalrechte, aktive Fähigkeiten und externe Integrationen.</p></header>
+@if(error()){<p class="error" role="alert">{{error()}}</p>}
+@if(message()){<p class="notice" role="status">{{message()}}</p>}
+@if(server()?.role==='ADMIN'){
+<div class="columns"><section class="panel"><h2><smp-icon name="shield" /> Hostinganschluss</h2>@for(item of capabilities();track item.label){<div class="setting-row"><div><h3>{{item.label}}</h3><p>{{item.detail}}</p></div><span class="badge" [class.success]="item.enabled">{{item.enabled?'Aktiv':'Nicht aktiv'}}</span></div>}<p class="source" style="margin-top:16px">Zugangsdaten werden als Secret-Dateien am Backend oder Host-Agent konfiguriert.</p></section>
+<section class="panel"><h2>Externe Quellen</h2>@for(item of integrations;track item.label){<div class="setting-row"><div><h3>{{item.label}}</h3><p>{{item.detail}}</p></div><span class="badge">Einrichtung offen</span></div>}</section></div>
+<section class="panel"><div class="section-heading"><h2>Serverbezogene Portalrollen</h2><span class="badge">Admin</span></div><p class="muted">Vergib Zugriff an eine existierende Identität deines Anmeldedienstes. Das erzeugt kein neues Benutzerkonto und keine Minecraft-OP-Rechte.</p><div class="table-scroll"><table><thead><tr><th>Konto-ID</th><th>Rolle</th><th>Aktion</th></tr></thead><tbody>@for(grant of grants();track grant.subject){<tr><td>{{grant.subject}}</td><td>{{grant.role}}</td><td><button class="danger compact" [disabled]="busy()" (click)="selected.set(grant.subject)">Zugriff entziehen</button></td></tr>}@empty{<tr><td colspan="3">Noch keine zusätzlichen Konten berechtigt. Der lokale Administrator ist separat konfiguriert.</td></tr>}</tbody></table></div>
+<form (submit)="$event.preventDefault(); save(subject.value,role.value)"><div class="form-grid" style="margin-top:20px"><label>Konto-ID (OIDC-Subjekt)<input #subject maxlength="200" placeholder="Eindeutige Konto-ID" required></label><label>Portalrolle<select #role style="display:block;margin-top:10px"><option value="VIEWER">Viewer · nur lesen</option><option value="OPERATOR">Operator · Betrieb und Whitelist</option><option value="ADMIN">Admin · alle Portalrechte</option></select></label></div><button class="primary" [disabled]="busy()">Berechtigung speichern</button></form>
+@if(selected();as target){<section class="panel confirmation" style="margin-top:20px"><h2>Zugriff für {{target}} entziehen?</h2><p>Der Zugriff dieses Kontos auf den Server wird entfernt.</p><div class="actions"><button (click)="selected.set(null)">Abbrechen</button><button class="danger" (click)="remove(target)" [disabled]="busy()">Zugriff entziehen</button></div></section>}</section>
+} @else {<section class="panel empty-state"><smp-icon name="shield" /><strong>Einstellungen erfordern Adminrechte</strong></section>}
+` })
+export class Settings {
+ private readonly api=inject(Api);private readonly destroy=inject(DestroyRef);
+ readonly server=signal<ServerProfile|null>(null);readonly grants=signal<{subject:string;role:string}[]>([]);readonly error=signal('');readonly message=signal('');readonly busy=signal(false);readonly selected=signal<string|null>(null);
+ readonly integrations=[{label:'Restic / Cloud',detail:'Verschlüsseltes Backupziel und Entschlüsselungszugang'},{label:'Prometheus / Grafana',detail:'Historische Messreihen und Alarmierung'},{label:'Webkarte',detail:'Bestätigte Browserkartenquelle; Xaero reicht nicht aus'}];
+ constructor(){this.load();}
+ load(){this.api.servers().pipe(switchMap(s=>{this.server.set(s[0]??null);if(!s[0])throw new Error();return this.api.settings(s[0].id);}),takeUntilDestroyed(this.destroy)).subscribe({next:v=>this.grants.set(v.grants),error:e=>this.error.set(errorMessage(e))});}
+ capabilities(){const s=this.server();return[{label:'Statusquelle',detail:s?.statusSource??'Keine',enabled:s?.statusSource!=='DISCONNECTED'},{label:'Start / Stop / Neustart',detail:'Persistente Jobs mit Readiness-Prüfung',enabled:!!s?.operationsAvailable},{label:'Whitelist',detail:'Geprüfte Minecraft-Mitgliedschaften',enabled:!!s?.playerOperationsAvailable},{label:'Operatoren',detail:'Separater Admin-Ablauf',enabled:!!s?.operatorOperationsAvailable},{label:'RCON-Konsole',detail:'Minecraft-Antworten und eigene Jobhistorie',enabled:!!s?.consoleAvailable}];}
+ save(subject:string,role:string){const s=this.server();if(!s||!subject.trim()||this.busy())return;this.busy.set(true);this.error.set('');this.api.grant(s.id,subject.trim(),role).pipe(takeUntilDestroyed(this.destroy)).subscribe({next:()=>{this.busy.set(false);this.message.set('Berechtigung gespeichert.');this.load();},error:e=>{this.busy.set(false);this.error.set(errorMessage(e));}});}
+ remove(subject:string){const s=this.server();if(!s||this.busy())return;this.busy.set(true);this.api.revokeGrant(s.id,subject).pipe(takeUntilDestroyed(this.destroy)).subscribe({next:()=>{this.busy.set(false);this.selected.set(null);this.message.set('Zugriff entzogen.');this.load();},error:e=>{this.busy.set(false);this.error.set(errorMessage(e));}});}
+}

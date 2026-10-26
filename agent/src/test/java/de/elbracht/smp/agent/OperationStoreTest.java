@@ -8,6 +8,17 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import static org.assertj.core.api.Assertions.*;
 
 class OperationStoreTest {
+    @Test void additiveSchemaKeepsOldLifecycleLedgerEntries() {
+        var database = new EmbeddedDatabaseBuilder().generateUniqueName(true).setType(EmbeddedDatabaseType.H2).addScript("schema.sql").build();
+        try {
+            var jdbc = new JdbcTemplate(database); var id = UUID.randomUUID();
+            jdbc.execute("ALTER TABLE agent_operation DROP COLUMN target_name");
+            jdbc.update("INSERT INTO agent_operation (id,operation_type,state,updated_at) VALUES (?, 'STOP', 'SUCCEEDED', CURRENT_TIMESTAMP)", id);
+            new org.springframework.jdbc.datasource.init.ResourceDatabasePopulator(new org.springframework.core.io.ClassPathResource("schema.sql")).execute(database);
+            var entry = new OperationStore(jdbc).find(id);
+            assertThat(entry.state()).isEqualTo("SUCCEEDED"); assertThat(entry.targetName()).isNull();
+        } finally { database.shutdown(); }
+    }
     @Test void durableLedgerSurvivesServiceRecreationAndBlocksUnknownOperations() {
         var database = new EmbeddedDatabaseBuilder().generateUniqueName(true).setType(EmbeddedDatabaseType.H2).addScript("schema.sql").build();
         try {

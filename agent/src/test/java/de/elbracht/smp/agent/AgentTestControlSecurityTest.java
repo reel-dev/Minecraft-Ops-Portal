@@ -25,6 +25,7 @@ class AgentTestControlSecurityTest {
     @MockitoBean DockerControl control;
     @MockitoBean ContainerProbe docker;
     @MockitoBean MinecraftProbe minecraft;
+    @MockitoBean TestWhitelistControl whitelist;
     @DynamicPropertySource static void token(DynamicPropertyRegistry properties) throws Exception {
         var file = Files.createTempFile("agent-control-", ".token"); Files.writeString(file, TOKEN); file.toFile().deleteOnExit();
         properties.add("agent.token-file", () -> file.toString());
@@ -51,5 +52,24 @@ class AgentTestControlSecurityTest {
             .contentType("application/json").content(body.replace("STOP", "private-payload"))).andExpect(status().isUnprocessableEntity())
             .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("private-payload"))));
         verifyNoInteractions(control, docker, minecraft);
+    }
+    @Test void whitelistIsDisabledUnlessTheAgentCapabilityWasEnabled() throws Exception {
+        String body = "{\"operationId\":\"" + UUID.randomUUID() + "\",\"type\":\"WHITELIST_ADD\",\"targetName\":\"TestPlayer\"}";
+        mvc.perform(post("/agent/v1/servers/main/operations").header("Authorization", "Bearer " + TOKEN).contentType("application/json").content(body))
+            .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.code").value("TEST_WHITELIST_DISABLED"));
+        org.assertj.core.api.Assertions.assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM agent_operation", Integer.class)).isZero();
+        verifyNoInteractions(control, docker, minecraft);
+    }
+    @Test void whitelistHttpRequestKeepsTargetInPersistentReplayAndRejectsAnotherName() throws Exception {
+        when(whitelist.available()).thenReturn(true);
+        when(docker.inspect()).thenReturn(new ContainerProbe.State("running", true, false, false, false, true, true));
+        var id = UUID.randomUUID();
+        String body = "{\"operationId\":\"" + id + "\",\"type\":\"WHITELIST_ADD\",\"targetName\":\"TestPlayer\"}";
+        for (int attempt = 0; attempt < 2; attempt++)
+            mvc.perform(post("/agent/v1/servers/main/operations").header("Authorization", "Bearer " + TOKEN).contentType("application/json").content(body))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.state").value("SUCCEEDED")).andExpect(jsonPath("$.targetName").value("TestPlayer"));
+        mvc.perform(post("/agent/v1/servers/main/operations").header("Authorization", "Bearer " + TOKEN).contentType("application/json").content(body.replace("TestPlayer", "OtherPlayer"))).andExpect(status().isConflict());
+        verify(whitelist, times(1)).apply(OperationStore.Type.WHITELIST_ADD, "TestPlayer");
+        verify(control, never()).start(); verify(control, never()).stop(); verifyNoInteractions(minecraft);
     }
 }

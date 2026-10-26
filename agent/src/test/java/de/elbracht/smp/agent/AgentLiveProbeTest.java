@@ -23,4 +23,16 @@ class AgentLiveProbeTest {
         var control = new TestDockerControl(StatusServiceTest.properties(25585, "docker-test-control"), new ObjectMapper());
         control.verifyTarget();
     }
+    @Test
+    @EnabledIfEnvironmentVariable(named = "SMP_LIVE_RCON", matches = "true")
+    void readRealRconAndFixedPlayerFilesWithoutMutation() throws Exception {
+        var mapper = new ObjectMapper();
+        var control = new TestDockerControl(StatusServiceTest.properties(25585, "docker-test-control"), mapper);
+        control.verifyRconTarget(25595);
+        var passwordFile = java.nio.file.Path.of(System.getenv("SMP_LIVE_RCON_PASSWORD_FILE"));
+        var reader = new RconPlayerReader(new RconProperties("read-only", "127.0.0.1", 25595, passwordFile, java.time.Duration.ofSeconds(5)));
+        assertThat(reader.readOnlineNames()).allMatch(name -> name.matches("[A-Za-z0-9_]{3,16}"));
+        for (var file : DockerControl.PlayerFile.values())
+            assertThat(mapper.readTree(control.readTestPlayerFile(file)).isArray()).isTrue();
+    }
 }

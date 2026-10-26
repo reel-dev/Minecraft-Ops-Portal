@@ -3,72 +3,25 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, catchError, finalize, switchMap, timer } from 'rxjs';
-import { Api, errorMessage, Job, JobPage, Operation, ServerProfile, Status } from '../core/api';
+import { Api, errorMessage, Job, JobPage, Operation, ServerProfile, Status, ContainerMetrics, BackupSnapshot, ModFile, ConfigurationSnapshot } from '../core/api';
+import { Icon } from '../core/icon';
 import { jobStateLabel, operationLabel } from '../core/job-presentation';
 
 @Component({
-  imports: [RouterLink],
-  template: `
-    <header><p class="eyebrow">SERVERÜBERSICHT</p><h1>Dein SMP. Ein Überblick.</h1><p class="muted">Betrieb, Spieler und Datensicherheit an einem Ort.</p></header>
-    @if (error()) { <div class="error" role="alert">{{ error() }} <button (click)="refresh()">Erneut laden</button></div> }
-    @if (loading()) { <p role="status">Serverprofil wird geladen …</p> }
-    @if (server(); as s) {
-      @if (s.environmentLabel) { <p class="notice" role="status">{{ s.environmentLabel }}</p> }
-      <section class="panel statusbar">
-        <div><p class="eyebrow">{{ s.name }}</p><h2>{{ lifecycle() }}</h2><p class="muted">Gesundheit: {{ health() }} · Aktivität: {{ activity() }}</p></div>
-        <div><strong>Bestandsprüfung {{ s.verifiedAt ? 'dokumentiert' : 'ausstehend' }}</strong>
-          <p class="muted">Nutzerangabe: Minecraft {{ s.reportedMinecraftVersion ?? 'unbekannt' }} · {{ s.reportedLoader ?? 'unbekannt' }}</p>
-          <small>Gemessene Version: {{ status()?.minecraftVersion ?? 'nicht verfügbar' }} · Loader: {{ status()?.loaderVersion ?? 'nicht verfügbar' }}</small>
-          @if (s.role === 'ADMIN') { <a routerLink="/inventory">Bestandsaufnahme dokumentieren →</a> }
-        </div>
-        <div class="actions">
-          @for (action of actions; track action.type) {
-            <button [class.primary]="action.type === 'RESTART'" [class.danger]="action.type === 'STOP'"
-              [disabled]="!s.operationsAvailable || s.role === 'VIEWER' || busy() || jobsLoading() || !!jobError() || !!blockingJob()" (click)="selected.set(action.type)">{{ action.label }}</button>
-          }
-        </div>
-      </section>
-      <p class="muted source">Messung: {{ formatTime(status()?.observedAt) }} · Quelle: {{ s.statusSource === 'HOST_AGENT_TEST_CONTROL' ? 'Lokaler Test-Host-Agent' : s.statusSource === 'HOST_AGENT_READ_ONLY' ? 'Lesender Host-Agent' : 'nicht angebunden' }} · Portalrolle: {{ s.role }}</p>
-      @if (status()?.reasonCode; as code) { <p class="muted" role="status">{{ statusReason(code) }}</p> }
-      @if (selected(); as type) {
-        <section class="panel" aria-label="Serveraktion bestätigen"><h2>{{ type }} für {{ s.name }}</h2>
-          <p>Die Aktion verändert den Serverbetrieb. Eine Begründung ist erforderlich; keine Zugangsdaten eintragen.</p>
-          <label>Begründung <input #reason maxlength="240" placeholder="Geplante Wartung"></label>
-          <div class="actions"><button (click)="selected.set(null)">Abbrechen</button><button class="primary" [disabled]="busy()" (click)="execute(type, reason.value)">Aktion bestätigen</button></div>
-        </section>
-      }
-      <div class="metrics">
-        <section class="panel"><p class="muted">Spieler online</p><strong class="metric">{{ status()?.playersOnline ?? '—' }}</strong><a routerLink="/players">Spielerverwaltung →</a></section>
-        @for (label of ['TPS / MSPT', 'CPU · Server', 'RAM · JVM / Container']; track label) {
-          <section class="panel"><p class="muted">{{ label }}</p><strong class="metric">—</strong><small>Keine Messquelle angebunden</small></section>
-        }
-      </div>
-      <div class="columns">
-        <section class="panel"><div class="panel-heading"><h2>Spieler</h2><a routerLink="/players">Alle anzeigen →</a></div><p class="empty">Die Online-Liste wird mit M06 angebunden.</p></section>
-        <section class="panel"><div class="panel-heading"><h2>Datensicherheit</h2><a routerLink="/backups">Backups →</a></div><p class="empty">Keine Sicherungsdaten angebunden.<br>Backup und Proberestore stehen vor der ersten Modinstallation.</p></section>
-      </div>
-      <div class="columns">
-        <section class="panel"><div class="panel-heading"><h2>Serverjobs</h2><a routerLink="/jobs">Historie ansehen →</a></div>
-          @if (s.role === 'VIEWER') { <p class="empty">Jobdetails erfordern Operator- oder Adminrechte.</p> }
-          @else {
-            @if (jobsLoading()) { <p role="status">Jobstatus wird geladen …</p> }
-            @if (jobError()) { <p role="alert">{{ jobError() }} Serveraktionen bleiben bis zur nächsten erfolgreichen Abfrage gesperrt.</p> }
-            @if (blockingJob(); as blocking) { <p class="job-warning" role="status">Server gesperrt: {{ stateLabel(blocking.state) }}. @if (blocking.state === 'UNKNOWN') { Der tatsächliche Ausgang muss am Host geprüft werden. Keine automatische Wiederholung. }</p> }
-            @for (item of recentJobs(); track item.jobId) {
-              <p><a [routerLink]="['/jobs', item.jobId]">{{ operation(item.type) }} · {{ stateLabel(item.state) }} →</a><small>{{ formatTime(item.updatedAt) }}</small></p>
-            } @empty { @if (!jobsLoading() && !jobError()) { <p class="empty">Noch keine Jobs gespeichert.</p> } }
-          }
-        </section>
-        <section class="panel"><h2>Weltkarte</h2><p class="empty">Keine Browserkartenquelle bestätigt.<br>Xaero allein belegt keine verfügbare Webkarte.</p></section>
-      </div>
-    } @else if (!loading() && !error()) { <section class="panel empty">Kein freigegebener Server vorhanden.</section> }
-  `
+  imports: [RouterLink, Icon],
+  templateUrl: './dashboard.html'
 })
 export class Dashboard {
   private readonly api = inject(Api);
   private readonly destroy = inject(DestroyRef);
   readonly server = signal<ServerProfile | null>(null);
   readonly status = signal<Status | null>(null);
+  readonly metrics = signal<ContainerMetrics | null>(null);
+  readonly onlineNames = signal<string[] | null>(null);
+  readonly logs = signal<string[] | null>(null);
+  readonly backups = signal<BackupSnapshot[]>([]);
+  readonly mods = signal<ModFile[] | null>(null);
+  readonly configuration = signal<ConfigurationSnapshot | null>(null);
   readonly recentJobs = signal<Job[]>([]);
   readonly blockingJob = signal<Job | null>(null);
   readonly jobsLoading = signal(true);
@@ -85,15 +38,25 @@ export class Dashboard {
   ];
   constructor() {
     this.refresh();
+    timer(0, 10000).pipe(takeUntilDestroyed(this.destroy)).subscribe(() => this.loadOverview());
     timer(5000, 5000).pipe(takeUntilDestroyed(this.destroy), switchMap(() => {
       const server = this.server();
-      return server ? this.api.status(server.id).pipe(catchError(err => { this.error.set(errorMessage(err)); return EMPTY; })) : EMPTY;
+      return server ? this.api.status(server.id).pipe(catchError(err => { this.error.set(errorMessage(err)); if([401,403].includes(err.status))this.clearSessionData(); return EMPTY; })) : EMPTY;
     })).subscribe(value => { this.status.set(value); this.error.set(''); });
     timer(2000, 3000).pipe(takeUntilDestroyed(this.destroy), switchMap(() => {
       const server = this.server();
       return server && server.role !== 'VIEWER'
         ? this.api.jobs(server.id, null, 5).pipe(catchError(err => { this.jobFailure(err); return EMPTY; })) : EMPTY;
     })).subscribe(value => this.applyJobs(value));
+  }
+  private loadOverview() {
+    const server = this.server(); if (!server) return;
+    this.api.onlinePlayers(server.id).pipe(takeUntilDestroyed(this.destroy)).subscribe({next: value => this.onlineNames.set(value.names), error: () => this.onlineNames.set(null)});
+    this.api.metrics(server.id).pipe(takeUntilDestroyed(this.destroy)).subscribe({next: value => this.metrics.set(value.data), error: () => this.metrics.set(null)});
+    if (server.role !== 'VIEWER') this.api.logs(server.id).pipe(takeUntilDestroyed(this.destroy)).subscribe({next: value => this.logs.set(value.data?.lines ?? null), error: () => this.logs.set(null)});
+    if (server.role !== 'VIEWER') this.api.backups(server.id).pipe(takeUntilDestroyed(this.destroy)).subscribe({next:value=>this.backups.set(value.data?.snapshots??[]),error:()=>this.backups.set([])});
+    this.api.mods(server.id).pipe(takeUntilDestroyed(this.destroy)).subscribe({next:value=>this.mods.set(value.data?.files??null),error:()=>this.mods.set(null)});
+    if (server.role === 'ADMIN') this.api.configuration(server.id).pipe(takeUntilDestroyed(this.destroy)).subscribe({next:value=>this.configuration.set(value.data),error:()=>this.configuration.set(null)});
   }
   lifecycle() {
     const labels = { UNKNOWN: 'Status unbekannt', OFFLINE: 'Offline', STARTING: 'Startet', RUNNING: 'Online', STOPPING: 'Wird beendet', ERROR: 'Serverfehler' };
@@ -134,11 +97,15 @@ export class Dashboard {
         error: err => this.jobFailure(err)
       });
       return servers.length ? this.api.status(servers[0].id) : EMPTY;
-    }), finalize(() => this.loading.set(false))).subscribe({ next: value => this.status.set(value), error: err => this.error.set(errorMessage(err)) });
+    }), finalize(() => this.loading.set(false))).subscribe({ next: value => { this.status.set(value); this.loadOverview(); }, error: err => this.error.set(errorMessage(err)) });
+  }
+  canRequest(type:Operation){
+    const server=this.server(),status=this.status();if(!server?.operationsAvailable||server.role==='VIEWER'||this.loading()||this.busy()||this.jobsLoading()||this.jobError()||this.blockingJob()||!status?.observedAt||status.reasonCode||Date.now()-Date.parse(status.observedAt)>30000)return false;
+    return type==='START'?status.lifecycle==='OFFLINE':type==='RESTART'?status.lifecycle==='RUNNING':type==='STOP'&&(status.lifecycle==='RUNNING'||status.lifecycle==='STARTING');
   }
   execute(type: Operation, reason: string) {
     const server = this.server();
-    if (!server || !server.operationsAvailable || server.role === 'VIEWER' || !reason.trim() || this.busy() || this.jobsLoading() || this.jobError() || this.blockingJob()) return;
+    if (!server || !this.canRequest(type) || !reason.trim()) return;
     this.busy.set(true); this.error.set('');
     const normalized = reason.trim();
     if (!this.pendingRequest || this.pendingRequest.type !== type || this.pendingRequest.reason !== normalized) {
@@ -158,6 +125,7 @@ export class Dashboard {
   }
   private jobFailure(error: HttpErrorResponse) {
     this.jobError.set(errorMessage(error)); this.jobsLoading.set(false);
-    if (error.status === 401 || error.status === 403) { this.recentJobs.set([]); this.blockingJob.set(null); }
+    if (error.status === 401 || error.status === 403) { this.error.set(errorMessage(error));this.clearSessionData(); }
   }
+  private clearSessionData(){this.server.set(null);this.status.set(null);this.metrics.set(null);this.onlineNames.set(null);this.logs.set(null);this.backups.set([]);this.mods.set(null);this.configuration.set(null);this.recentJobs.set([]);this.blockingJob.set(null);}
 }

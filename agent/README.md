@@ -1,5 +1,7 @@
 # Begrenzter Host-Agent
 
+Neu: [echte RCON-/Whitelist-Abnahme am isolierten Minecraft-Testserver](../docs/18-rcon-minecraft-abnahme.md). Standard `agent.rcon.mode=disconnected`; `read-only` bleibt auf `list` begrenzt. Benannte Whitelist-Mutationen benötigen zusätzlich `test-control`, den festen Testcontainer, geprüftes Loopback-RCON-Binding und lesbare Testdateien. Keine freien Befehle oder OP-Änderungen. Aktueller Agentbuild: 60 erfolgreiche Tests einschließlich vier explizit aktivierter Live-Proben; Standard-CI überspringt diese vier.
+
 Spring Boot 3.5.16, Java-Ziel 21, lokal mit JDK 25 geprüft. Der Dienst läuft separat vom Portal und bindet standardmäßig nur `127.0.0.1:8091`. Er besitzt keine generische Shell, keinen Docker-Proxy und kein frei konfigurierbares Kommando aus einem HTTP-Request.
 
 ## Modi
@@ -37,6 +39,8 @@ Readiness stammt aus einer echten Java-Edition-Server-List-Abfrage an den geprü
 
 POST `/agent/v1/servers/main/operations` ist nur im Modus `docker-test-control` autorisiert. Body: `operationId` (UUID des Portaljobs) und `type` (`START`, `STOP`, `RESTART`). Keine zusätzlichen Container-, Pfad-, Docker- oder Kommandoargumente.
 
+Zusätzlich gibt es `WHITELIST_ADD`/`WHITELIST_REMOVE` mit `targetName`, ausschließlich nach den separaten [Testfreischaltungen und RCON-/Dateinachweisen](../docs/17-whitelist-testjobs.md). Derselbe Ledger und dieselbe Sperre gelten für beide Operationsgruppen. Name/Typ/ID müssen bei Wiederholung identisch sein. Die Ledger-Tabelle erhält `target_name` additiv; alte Lifecycle-Einträge bleiben erhalten. In `read-only` kann der RCON-Client keine Whitelist-Mutation senden.
+
 Vor jeder Aktion müssen alle Bedingungen passen:
 
 - Container exakt `elbracht-smp-control-test-minecraft`.
@@ -56,7 +60,7 @@ Aus `agent/`:
 ../backend/mvnw.cmd verify
 ```
 
-Standardtests benötigen keinen Docker-Daemon; drei Live-Proben sind dann übersprungen. Nur bei bereits gestarteter [Test-Compose](../infra/test-server/compose.yml):
+Standardtests benötigen keinen Docker-Daemon; vier Live-Proben sind dann übersprungen. Nur bei bereits gestarteter [Test-Compose](../infra/test-server/compose.yml) aktiviert `SMP_LIVE_TEST` zunächst drei Docker-/Minecraft-Proben:
 
 ```powershell
 $env:SMP_LIVE_TEST = 'true'
@@ -65,6 +69,8 @@ Remove-Item Env:SMP_LIVE_TEST
 ```
 
 Die Live-Proben prüfen Zustand, Minecraft-Handshake und Schutzbedingungen des fest benannten Testcontainers lesend. Die wirkliche Stop/Start/Restart-Abnahme ist unter [Testserver-Abnahme](../docs/13-testserver-abnahme.md) dokumentiert.
+
+Die vierte Probe benötigt zusätzlich `SMP_LIVE_RCON=true` und `SMP_LIVE_RCON_PASSWORD_FILE` sowie den separat gestarteten RCON-Testoverride. Sie liest nur `list` und die beiden festen Testdateien; [Anleitung und tatsächliche Whitelist-Abnahme](../docs/18-rcon-minecraft-abnahme.md). Dateiquelle `docker-test` funktioniert ausschließlich im bestehenden Teststeuerungsmodus und bietet keine frei wählbaren Docker-Exec-Befehle.
 
 ## Lokal starten
 
@@ -78,3 +84,9 @@ java -jar agent/target/smp-host-agent-0.1.0-SNAPSHOT.jar
 ```
 
 Teststeuerung benötigt zusätzlich den ausdrücklichen Modus `docker-test-control`. Für das Portal ist dann `local,test-server` plus `portal.agent.mode=http-test-control` erforderlich; `prod` verbietet diesen Adapter. Für echte Produktionscontainer gibt es noch keine freigegebene Mutationsimplementierung. Docker-Zugriff ist ein weitreichendes Hostprivileg: Dienstkonto, Dockerberechtigungen, TLS und Netzgrenzen vor Deployment auf `docker-01` prüfen.
+
+## Lokale Backup-Aufbewahrung
+
+`agent.test-backup.retention-enabled` ist standardmäßig false. Bei ausdrücklicher Aktivierung prüft der Agent nach einer erfolgreichen normalen Vollsicherung das tatsächliche UTC-Fenster von 7 × 24 Stunden. Die letzte erfolgreiche Sicherung, unbekannte Snapshots und aktive Restore-/Modreferenzen bleiben geschützt. Vorabsicherungen lösen keine Bereinigung aus. Admin-Vorschau, Dry Run, konkrete Snapshot-IDs, Prune, Datenprüfung und dauerhafter Entfernungsnachweis: [Aufbewahrung und tatsächliche Abnahme](../docs/24-aufbewahrung-abnahme.md).
+
+Die zusätzliche `BackupRetentionLiveTest`-Probe öffnet ausschließlich ein neues kurzlebiges verschlüsseltes Repository mit synthetischen Textdateien. Sie benötigt `SMP_RETENTION_LIVE_TEST=true` und `SMP_RETENTION_TEST_EXECUTABLE` mit dem Pfad zum geprüften Restic-Programm. Sie hat keinen Docker- oder Produktionszugriff. Die vier bisherigen Minecraft-Live-Proben werden dadurch nicht aktiviert.

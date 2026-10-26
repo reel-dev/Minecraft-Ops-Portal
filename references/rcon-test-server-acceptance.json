@@ -1,0 +1,43 @@
+{
+  "environment": "ACTUAL_LOCAL_MINECRAFT_TEST_ONLY",
+  "minecraftVersion": "26.3",
+  "rconReadConfirmed": true,
+  "onlinePlayers": [],
+  "baselineWhitelistCount": 0,
+  "finalWhitelistCount": 0,
+  "records": [
+    {
+      "type": "WHITELIST_ADD",
+      "jobId": "f7bd7ea0-8c10-4f2b-abe7-7d5912c1b921",
+      "state": "SUCCEEDED",
+      "targetName": "Notch",
+      "observedAt": "2026-10-25T17:48:24.6778731+00:00",
+      "whitelistConfirmed": true,
+      "idempotencyConfirmed": true,
+      "auditTransitions": 3,
+      "operatorsUnchanged": true
+    },
+    {
+      "type": "WHITELIST_REMOVE",
+      "jobId": "bedfd01f-7f46-4a57-bfb7-d093789bef04",
+      "state": "SUCCEEDED",
+      "targetName": "Notch",
+      "observedAt": "2026-10-25T17:48:28.1127928+00:00",
+      "whitelistConfirmed": true,
+      "idempotencyConfirmed": true,
+      "auditTransitions": 3,
+      "operatorsUnchanged": true
+    }
+  ],
+  "productionContacted": false,
+  "restartChecks": {
+    "agentReplayAfterProcessRestart": true,
+    "completedAddNotRepeated": true,
+    "whitelistStillEmpty": true,
+    "portalHistoryAfterProcessRestart": true,
+    "allStoredJobs": 5,
+    "auditEvents": 15,
+    "blockingJob": null,
+    "observedAt": "2026-10-25T17:50:30.7269007+00:00"
+  }
+}

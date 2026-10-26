@@ -28,7 +28,7 @@ class HostReadOnlySecurityTest {
         properties.add("agent.token-file", () -> file.toString());
     }
     @Test void readOnlyHostProfileRejectsMutationsEvenWithValidToken() throws Exception {
-        for (String action : new String[] {"START", "STOP", "RESTART"})
+        for (String action : new String[] {"START", "STOP", "RESTART", "WHITELIST_ADD", "WHITELIST_REMOVE"})
             mvc.perform(post("/agent/v1/servers/main/operations").header("Authorization", "Bearer " + TOKEN)
                 .contentType("application/json").content("{\"operationId\":\"22a256ca-457d-4f88-a54a-71cbaae8f386\",\"type\":\"" + action + "\"}"))
                 .andExpect(status().isForbidden());
